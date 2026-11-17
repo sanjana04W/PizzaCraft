@@ -1,6 +1,6 @@
 /**
- * PizzaCraft - Blog Routes (Full CRUD)
- * CREATE / READ / UPDATE / DELETE + search + category filter
+ * PizzaCraft - Blog Routes (Full CRUD + User Filtering)
+ * CREATE / READ / UPDATE / DELETE + search + category + user-specific blogs
  * MongoDB primary storage with JSON file fallback
  */
 
@@ -11,6 +11,7 @@ const path = require('path');
 
 const { isDbConnected } = require('../config/db');
 const Blog = require('../models/Blog');
+const { protect, optionalAuth } = require('../middleware/auth');
 
 const BLOGS_FILE = path.join(__dirname, '..', 'data', 'blogs.json');
 
@@ -42,6 +43,7 @@ async function seedBlogs() {
           title: 'The Secret Behind Perfect Neapolitan Pizza Dough',
           category: 'Baking Secrets',
           author: 'Chef Marco Rossi',
+          authorEmail: 'marco@pizzacraft.com',
           avatar: 'https://ui-avatars.com/api/?name=Marco+Rossi&background=FF3838&color=fff',
           date: 'Nov 10, 2024',
           readTime: '8 min read',
@@ -53,6 +55,7 @@ async function seedBlogs() {
           title: 'Italian Heritage: How Pizza Became the World\'s Favorite Food',
           category: 'Italian Heritage',
           author: 'Sofia Bianchi',
+          authorEmail: 'sofia@pizzacraft.com',
           avatar: 'https://ui-avatars.com/api/?name=Sofia+Bianchi&background=FF8C00&color=fff',
           date: 'Nov 5, 2024',
           readTime: '6 min read',
@@ -64,6 +67,7 @@ async function seedBlogs() {
           title: 'Pro Chef Tips: Choosing the Best Mozzarella for Your Pizza',
           category: 'Chef Tips',
           author: 'Chef Luca Ferretti',
+          authorEmail: 'luca@pizzacraft.com',
           avatar: 'https://ui-avatars.com/api/?name=Luca+Ferretti&background=22C55E&color=fff',
           date: 'Oct 28, 2024',
           readTime: '5 min read',
@@ -80,7 +84,7 @@ async function seedBlogs() {
 }
 
 // ─── Helper: build a blog object (JSON fallback) ──────────────────────────────
-function buildBlogObject({ title, category, author, content, image }) {
+function buildBlogObject({ title, category, author, authorEmail, userId, content, image }) {
   const words = content.trim().split(/\s+/).length;
   const readMinutes = Math.max(2, Math.round(words / 100));
   const cleanImage = image && typeof image === 'string' && image.trim().startsWith('http')
@@ -91,6 +95,8 @@ function buildBlogObject({ title, category, author, content, image }) {
     title: title.trim(),
     category: category?.trim() || 'Baking Secrets',
     author: author.trim(),
+    authorEmail: (authorEmail || '').trim().toLowerCase(),
+    userId: userId || '',
     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author.trim())}&background=FF3838&color=fff`,
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     readTime: `${readMinutes} min read`,
@@ -101,15 +107,73 @@ function buildBlogObject({ title, category, author, content, image }) {
   };
 }
 
-// ─── GET /api/blogs — List (search + category) ────────────────────────────────
+// ─── GET /api/blogs/user/me — Logged-in user's own blogs (Protected) ──────────
+router.get('/user/me', protect, async (req, res) => {
+  try {
+    const userEmail = req.user.email?.toLowerCase();
+    const userId = req.user.id;
+    const userName = req.user.name?.toLowerCase();
+
+    if (isDbConnected()) {
+      await seedBlogs();
+      const query = {
+        $or: [
+          { authorEmail: userEmail },
+          { userId: userId },
+          { author: { $regex: new RegExp(`^${userName}$`, 'i') } }
+        ]
+      };
+      const blogs = await Blog.find(query).sort({ createdAt: -1 }).lean();
+      return res.status(200).json({
+        success: true,
+        count: blogs.length,
+        blogs: blogs.map(b => ({ ...b, id: b._id.toString() }))
+      });
+    }
+
+    // JSON fallback
+    const blogs = readBlogs();
+    const userBlogs = blogs.filter(b =>
+      (b.authorEmail && b.authorEmail.toLowerCase() === userEmail) ||
+      (b.userId && b.userId === userId) ||
+      (b.author && b.author.toLowerCase() === userName)
+    );
+    return res.status(200).json({
+      success: true,
+      count: userBlogs.length,
+      blogs: userBlogs
+    });
+  } catch (err) {
+    console.error('GET /api/blogs/user/me error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve your blogs.' });
+  }
+});
+
+// ─── GET /api/blogs — List (search + category + authorEmail) ──────────────────
 router.get('/', async (req, res) => {
   try {
-    const { category, search } = req.query;
+    const { category, search, authorEmail, author, userId } = req.query;
+
     if (isDbConnected()) {
       await seedBlogs();
       let query = {};
-      if (category && category !== 'all')
+
+      if (category && category !== 'all') {
         query.category = { $regex: new RegExp(`^${category}$`, 'i') };
+      }
+
+      if (authorEmail && authorEmail.trim()) {
+        query.authorEmail = authorEmail.trim().toLowerCase();
+      }
+
+      if (author && author.trim()) {
+        query.author = { $regex: new RegExp(`^${author.trim()}$`, 'i') };
+      }
+
+      if (userId && userId.trim()) {
+        query.userId = userId.trim();
+      }
+
       if (search && search.trim()) {
         const q = search.trim();
         query.$or = [
@@ -119,13 +183,31 @@ router.get('/', async (req, res) => {
           { category: { $regex: q, $options: 'i' } }
         ];
       }
+
       const blogs = await Blog.find(query).sort({ createdAt: -1 }).lean();
-      return res.json({ success: true, count: blogs.length, blogs: blogs.map(b => ({ ...b, id: b._id.toString() })) });
+      return res.json({
+        success: true,
+        count: blogs.length,
+        blogs: blogs.map(b => ({ ...b, id: b._id.toString() }))
+      });
     }
+
     // JSON fallback
     let blogs = readBlogs();
-    if (category && category !== 'all')
+    if (category && category !== 'all') {
       blogs = blogs.filter(b => b.category?.toLowerCase() === category.toLowerCase());
+    }
+    if (authorEmail && authorEmail.trim()) {
+      const emailLower = authorEmail.trim().toLowerCase();
+      blogs = blogs.filter(b => b.authorEmail && b.authorEmail.toLowerCase() === emailLower);
+    }
+    if (author && author.trim()) {
+      const authLower = author.trim().toLowerCase();
+      blogs = blogs.filter(b => b.author && b.author.toLowerCase() === authLower);
+    }
+    if (userId && userId.trim()) {
+      blogs = blogs.filter(b => b.userId === userId.trim());
+    }
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
       blogs = blogs.filter(b =>
@@ -161,12 +243,17 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ─── POST /api/blogs — Create ─────────────────────────────────────────────────
-router.post('/', async (req, res) => {
+// ─── POST /api/blogs — Create (optional JWT auth to link author) ───────────────
+router.post('/', optionalAuth, async (req, res) => {
   try {
-    const { title, category, author, content, image } = req.body;
+    const { title, category, author, authorEmail, userId, content, image } = req.body;
+
+    const finalAuthor = author?.trim() || req.user?.name || 'PizzaCraft Chef';
+    const finalEmail = (authorEmail || req.user?.email || '').trim().toLowerCase();
+    const finalUserId = userId || req.user?.id || '';
+
     if (!title?.trim()) return res.status(400).json({ success: false, message: 'Title is required.' });
-    if (!author?.trim()) return res.status(400).json({ success: false, message: 'Author is required.' });
+    if (!finalAuthor) return res.status(400).json({ success: false, message: 'Author is required.' });
     if (!content?.trim()) return res.status(400).json({ success: false, message: 'Content is required.' });
 
     if (isDbConnected()) {
@@ -177,17 +264,32 @@ router.post('/', async (req, res) => {
       const blog = await Blog.create({
         title: title.trim(),
         category: category?.trim() || 'Baking Secrets',
-        author: author.trim(),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author.trim())}&background=FF3838&color=fff`,
+        author: finalAuthor,
+        authorEmail: finalEmail,
+        userId: finalUserId,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalAuthor)}&background=FF3838&color=fff`,
         readTime: `${Math.max(2, Math.round(words / 100))} min read`,
         image: cleanImage,
         content: content.trim()
       });
-      return res.status(201).json({ success: true, message: '🎉 Story published!', blog: { ...blog.toObject(), id: blog._id.toString() } });
+      return res.status(201).json({
+        success: true,
+        message: '🎉 Story published!',
+        blog: { ...blog.toObject(), id: blog._id.toString() }
+      });
     }
+
     // JSON fallback
     const blogs = readBlogs();
-    const newBlog = buildBlogObject({ title, category, author, content, image });
+    const newBlog = buildBlogObject({
+      title,
+      category,
+      author: finalAuthor,
+      authorEmail: finalEmail,
+      userId: finalUserId,
+      content,
+      image
+    });
     blogs.unshift(newBlog);
     writeBlogs(blogs);
     return res.status(201).json({ success: true, message: '🎉 Story published!', blog: newBlog });
@@ -201,7 +303,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, category, author, content, image } = req.body;
+    const { title, category, author, authorEmail, userId, content, image } = req.body;
 
     if (!title?.trim()) return res.status(400).json({ success: false, message: 'Title is required.' });
     if (!author?.trim()) return res.status(400).json({ success: false, message: 'Author is required.' });
@@ -222,6 +324,8 @@ router.put('/:id', async (req, res) => {
       content: content.trim(),
       updatedAt: new Date().toISOString()
     };
+    if (authorEmail !== undefined) updates.authorEmail = authorEmail.trim().toLowerCase();
+    if (userId !== undefined) updates.userId = userId;
 
     if (isDbConnected()) {
       let blog = null;

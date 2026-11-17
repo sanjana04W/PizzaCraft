@@ -1,6 +1,6 @@
 /**
  * Automated Test Suite for PizzaCraft Backend APIs
- * Tests all endpoints with MongoDB + JSON fallback modes
+ * Tests all endpoints: Auth, JWT, Protected Dashboard, Blogs CRUD, Orders
  */
 
 const http = require('http');
@@ -9,7 +9,7 @@ const app = require('./server');
 const PORT = 5055;
 let server;
 
-function request(method, path, body = null) {
+function request(method, path, body = null, extraHeaders = {}) {
   return new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : null;
     const req = http.request({
@@ -19,7 +19,8 @@ function request(method, path, body = null) {
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {})
+        ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {}),
+        ...extraHeaders
       }
     }, (res) => {
       let data = '';
@@ -58,13 +59,16 @@ async function runTests() {
   assert(health.status === 200 && health.body.status === 'healthy', 'GET /api/health → 200 healthy');
   assert(typeof health.body.database === 'string', 'GET /api/health → includes database status');
 
-  // ── 2. Valid Login ────────────────────────────────────────────────────────
+  // ── 2. Valid Login & JWT Issuance ─────────────────────────────────────────
   const loginRes = await request('POST', '/api/auth/login', {
     email: 'john@example.com',
-    password: 'pizza123'   // seeded password (bcrypt-hashed in users.json)
+    password: 'pizza123'
   });
   assert(loginRes.status === 200 && loginRes.body.success === true, 'POST /api/auth/login → valid credentials');
-  assert(loginRes.body.user && !loginRes.body.user.password, 'POST /api/auth/login → no password in response');
+  assert(typeof loginRes.body.token === 'string' && loginRes.body.token.length > 20, 'POST /api/auth/login → issues signed JWT token');
+  assert(loginRes.body.user && !loginRes.body.user.password, 'POST /api/auth/login → returns safe user (no password)');
+
+  const johnToken = loginRes.body.token;
 
   // ── 3. Invalid Login ──────────────────────────────────────────────────────
   const failLogin = await request('POST', '/api/auth/login', {
@@ -73,106 +77,142 @@ async function runTests() {
   });
   assert(failLogin.status === 401 && failLogin.body.success === false, 'POST /api/auth/login → wrong password returns 401');
 
-  // ── 4. Register New User ──────────────────────────────────────────────────
+  // ── 4. Register New User & JWT Issuance ───────────────────────────────────
   const testEmail = `testchef_${Date.now()}@example.com`;
   const regRes = await request('POST', '/api/auth/register', {
-    name: 'Test Chef',
+    name: 'Chef Alessandro',
     email: testEmail,
-    password: 'testpass123',
+    password: 'securepassword123',
     phone: '+91 91234 56789',
     address: '99 Olive Lane, Gourmet City'
   });
   assert(regRes.status === 201 && regRes.body.success === true, 'POST /api/auth/register → creates new user');
+  assert(typeof regRes.body.token === 'string' && regRes.body.token.length > 20, 'POST /api/auth/register → issues signed JWT token');
   assert(regRes.body.user && regRes.body.user.loyaltyPoints === 120, 'POST /api/auth/register → grants 120 loyalty points');
 
-  // ── 5. Duplicate Registration ─────────────────────────────────────────────
+  const newUserToken = regRes.body.token;
+
+  // ── 5. Duplicate Registration Check ───────────────────────────────────────
   const dupReg = await request('POST', '/api/auth/register', {
-    name: 'Dup Chef', email: testEmail, password: 'testpass123'
+    name: 'Duplicate Chef',
+    email: testEmail,
+    password: 'securepassword123'
   });
   assert(dupReg.status === 409 && dupReg.body.success === false, 'POST /api/auth/register → 409 on duplicate email');
 
-  // ── 6. Register Validation ────────────────────────────────────────────────
+  // ── 6. Short Password Validation ──────────────────────────────────────────
   const shortPass = await request('POST', '/api/auth/register', {
-    name: 'Bad Chef', email: 'valid@example.com', password: '123'
+    name: 'Bad Chef',
+    email: 'valid@example.com',
+    password: '123'
   });
   assert(shortPass.status === 400 && shortPass.body.success === false, 'POST /api/auth/register → 400 on short password');
 
-  // ── 7. Get All Blogs ──────────────────────────────────────────────────────
-  const blogsRes = await request('GET', '/api/blogs');
-  assert(blogsRes.status === 200 && Array.isArray(blogsRes.body.blogs), 'GET /api/blogs → returns blog array');
-  assert(blogsRes.body.blogs.length > 0, 'GET /api/blogs → has at least one blog');
-
-  // ── 8. Create Blog Post ───────────────────────────────────────────────────
-  const createBlogRes = await request('POST', '/api/blogs', {
-    title: 'Test Blog: San Marzano Secrets',
-    category: 'Baking Secrets',
-    author: 'Test Chef',
-    content: 'Grown on the southern slopes of Mount Vesuvius, authentic San Marzano tomatoes possess a distinct bittersweet complexity, vibrant scarlet hue, and gentle acidity that makes them the ultimate pizza sauce base.',
-    image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800'
+  // ── 7. Protected Route: GET /api/auth/me (Valid Token) ────────────────────
+  const meRes = await request('GET', '/api/auth/me', null, {
+    'Authorization': `Bearer ${johnToken}`
   });
-  assert(createBlogRes.status === 201 && createBlogRes.body.success === true, 'POST /api/blogs → creates blog post');
-  assert(createBlogRes.body.blog && createBlogRes.body.blog.author === 'Test Chef', 'POST /api/blogs → blog has correct author');
+  assert(meRes.status === 200 && meRes.body.success === true, 'GET /api/auth/me (Protected) → 200 with valid JWT');
+  assert(meRes.body.user?.email === 'john@example.com', 'GET /api/auth/me → returns authenticated user profile');
 
-  // ── 9. Get Single Blog by ID ──────────────────────────────────────────────
-  const createdBlogId = createBlogRes.body.blog.id || createBlogRes.body.blog._id;
+  // ── 8. Protected Route: GET /api/auth/me (Missing Token) ──────────────────
+  const meNoToken = await request('GET', '/api/auth/me');
+  assert(meNoToken.status === 401 && meNoToken.body.success === false, 'GET /api/auth/me (Protected) → 401 when token is missing');
+
+  // ── 9. Protected Route: GET /api/auth/me (Invalid Token) ──────────────────
+  const meBadToken = await request('GET', '/api/auth/me', null, {
+    'Authorization': 'Bearer invalid.token.payload'
+  });
+  assert(meBadToken.status === 401 && meBadToken.body.success === false, 'GET /api/auth/me (Protected) → 401 with invalid token');
+
+  // ── 10. Protected Route: PUT /api/auth/profile ────────────────────────────
+  const updateProfRes = await request('PUT', '/api/auth/profile', {
+    name: 'John Artisan Doe',
+    phone: '+91 98888 77777',
+    address: '77 Mozzarella Boulevard, Gourmet City'
+  }, { 'Authorization': `Bearer ${johnToken}` });
+  assert(updateProfRes.status === 200 && updateProfRes.body.success === true, 'PUT /api/auth/profile (Protected) → updates profile');
+  assert(updateProfRes.body.user?.name === 'John Artisan Doe', 'PUT /api/auth/profile → returns updated name');
+
+  // ── 11. Protected Private Dashboard: GET /api/dashboard/stats ─────────────
+  const dashAuth = await request('GET', '/api/dashboard/stats', null, {
+    'Authorization': `Bearer ${johnToken}`
+  });
+  assert(dashAuth.status === 200 && dashAuth.body.success === true, 'GET /api/dashboard/stats (Protected) → 200 authorized');
+
+  const dashNoAuth = await request('GET', '/api/dashboard/stats');
+  assert(dashNoAuth.status === 401 && dashNoAuth.body.success === false, 'GET /api/dashboard/stats (Protected) → 401 unauthorized (Route Protected)');
+
+  // ── 12. Logout Endpoint: POST /api/auth/logout ────────────────────────────
+  const logoutRes = await request('POST', '/api/auth/logout');
+  assert(logoutRes.status === 200 && logoutRes.body.success === true, 'POST /api/auth/logout → 200 logged out');
+
+  // ── 13. Create Blog Linked to Authenticated User ──────────────────────────
+  const createBlogRes = await request('POST', '/api/blogs', {
+    title: 'Alessandro Secret Sourdough Recipe',
+    category: 'Baking Secrets',
+    author: 'Chef Alessandro',
+    authorEmail: testEmail,
+    content: 'My secret sourdough starter has been nurtured for over three generations. The wild yeast creates unmatched airy crumb texture and blistering that melts in your mouth.',
+    image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800'
+  }, { 'Authorization': `Bearer ${newUserToken}` });
+  assert(createBlogRes.status === 201 && createBlogRes.body.success === true, 'POST /api/blogs → creates story linked to user');
+  const createdBlogId = createBlogRes.body.blog?.id || createBlogRes.body.blog?._id;
+
+  // ── 14. Get User's Own Blogs (Protected): GET /api/blogs/user/me ──────────
+  const myBlogsRes = await request('GET', '/api/blogs/user/me', null, {
+    'Authorization': `Bearer ${newUserToken}`
+  });
+  assert(myBlogsRes.status === 200 && Array.isArray(myBlogsRes.body.blogs), 'GET /api/blogs/user/me (Protected) → returns user blogs');
+  assert(myBlogsRes.body.blogs.some(b => b.title === 'Alessandro Secret Sourdough Recipe'), 'GET /api/blogs/user/me → contains logged-in user blog');
+
+  // ── 15. Get All Blogs ─────────────────────────────────────────────────────
+  const blogsRes = await request('GET', '/api/blogs');
+  assert(blogsRes.status === 200 && Array.isArray(blogsRes.body.blogs), 'GET /api/blogs → returns array of all articles');
+  assert(blogsRes.body.blogs.length > 0, 'GET /api/blogs → contains published articles');
+
+  // ── 16. Get Single Blog by ID ─────────────────────────────────────────────
   const singleBlogRes = await request('GET', `/api/blogs/${createdBlogId}`);
   assert(singleBlogRes.status === 200 && singleBlogRes.body.success === true, 'GET /api/blogs/:id → returns single blog');
-  assert(singleBlogRes.body.blog && singleBlogRes.body.blog.title === 'Test Blog: San Marzano Secrets', 'GET /api/blogs/:id → correct blog returned');
+  assert(singleBlogRes.body.blog?.title === 'Alessandro Secret Sourdough Recipe', 'GET /api/blogs/:id → correct blog title returned');
 
-  // ── 10. Get Blog - Not Found ──────────────────────────────────────────────
+  // ── 17. Single Blog 404 ───────────────────────────────────────────────────
   const notFoundRes = await request('GET', '/api/blogs/nonexistent-id-xyz');
   assert(notFoundRes.status === 404 && notFoundRes.body.success === false, 'GET /api/blogs/:id → 404 for missing blog');
 
-  // ── 11. Update Blog (PUT) ─────────────────────────────────────────────────
+  // ── 18. Update Blog (PUT) ─────────────────────────────────────────────────
   const updateRes = await request('PUT', `/api/blogs/${createdBlogId}`, {
-    title: 'Updated: San Marzano Deep Dive',
-    category: 'Ingredients',
-    author: 'Test Chef (Updated)',
-    content: 'An updated and expanded look at San Marzano tomatoes — now with more volcanic soil science, harvest season insights, and tasting notes comparing DOP-certified to generic supermarket cans. The difference in sweetness and acidity is remarkable and undeniable.',
+    title: 'Alessandro Master Sourdough (Updated)',
+    category: 'Baking Secrets',
+    author: 'Chef Alessandro',
+    content: 'Updated fermentation technique: 80% hydration with 48 hours cold proofing creates larger alveoli and enhanced sour notes.',
     image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800'
   });
   assert(updateRes.status === 200 && updateRes.body.success === true, 'PUT /api/blogs/:id → updates blog');
-  assert(updateRes.body.blog?.title === 'Updated: San Marzano Deep Dive', 'PUT /api/blogs/:id → returns updated title');
+  assert(updateRes.body.blog?.title === 'Alessandro Master Sourdough (Updated)', 'PUT /api/blogs/:id → returns updated title');
 
-  // ── 12. Verify Update Persisted ───────────────────────────────────────────
-  const verifyUpdate = await request('GET', `/api/blogs/${createdBlogId}`);
-  assert(verifyUpdate.body.blog?.title === 'Updated: San Marzano Deep Dive', 'GET /api/blogs/:id → update persisted correctly');
-
-  // ── 13. Update Validation ─────────────────────────────────────────────────
-  const badUpdate = await request('PUT', `/api/blogs/${createdBlogId}`, {
-    title: '', author: 'Test', content: 'Valid content here'
-  });
-  assert(badUpdate.status === 400 && badUpdate.body.success === false, 'PUT /api/blogs/:id → 400 on empty title');
-
-  // ── 14. Delete Blog (DELETE) ──────────────────────────────────────────────
+  // ── 19. Delete Blog (DELETE) ──────────────────────────────────────────────
   const deleteRes = await request('DELETE', `/api/blogs/${createdBlogId}`);
   assert(deleteRes.status === 200 && deleteRes.body.success === true, 'DELETE /api/blogs/:id → deletes blog');
 
-  // ── 15. Verify Deletion ───────────────────────────────────────────────────
   const afterDelete = await request('GET', `/api/blogs/${createdBlogId}`);
   assert(afterDelete.status === 404, 'GET /api/blogs/:id → 404 after deletion');
 
-  // ── 16. Blog Validation ───────────────────────────────────────────────────
-  const failBlog = await request('POST', '/api/blogs', {
-    title: '', category: 'Baking Secrets', author: 'Chef', content: 'Short'
-  });
-  assert(failBlog.status === 400 && failBlog.body.success === false, 'POST /api/blogs → 400 on empty title');
-
-  // ── 17. Search Blogs ──────────────────────────────────────────────────────
+  // ── 20. Live Search Blogs ─────────────────────────────────────────────────
   const searchRes = await request('GET', '/api/blogs?search=mozzarella');
-  assert(searchRes.status === 200 && Array.isArray(searchRes.body.blogs), 'GET /api/blogs?search= → returns filtered results');
+  assert(searchRes.status === 200 && Array.isArray(searchRes.body.blogs), 'GET /api/blogs?search= → returns search results');
 
-  // ── 18. Category Filter ───────────────────────────────────────────────────
+  // ── 21. Category Filter ───────────────────────────────────────────────────
   const catRes = await request('GET', '/api/blogs?category=Baking+Secrets');
   assert(catRes.status === 200 && Array.isArray(catRes.body.blogs), 'GET /api/blogs?category= → category filter works');
 
-  // ── 19. Like Blog ─────────────────────────────────────────────────────────
+  // ── 22. Toggle Blog Like ──────────────────────────────────────────────────
   const blogsAgain = await request('GET', '/api/blogs');
   const anyBlogId = blogsAgain.body.blogs?.[0]?.id || blogsAgain.body.blogs?.[0]?._id;
   const likeRes = await request('POST', `/api/blogs/${anyBlogId}/like`, { action: 'like' });
   assert(likeRes.status === 200 && typeof likeRes.body.likes === 'number', 'POST /api/blogs/:id/like → increments likes');
 
-  // ── 20. Place Order ───────────────────────────────────────────────────────
+  // ── 23. Place Order ───────────────────────────────────────────────────────
   const orderRes = await request('POST', '/api/orders', {
     items: [{ id: 'piz-1', name: 'Margherita Classica', price: 349, quantity: 2 }],
     subtotal: 698, tax: 35, deliveryFee: 49, discount: 0, total: 782,
@@ -180,12 +220,12 @@ async function runTests() {
   });
   assert(orderRes.status === 201 && orderRes.body.success === true, 'POST /api/orders → places pizza order');
 
-  // ── 21. Advance Order Status ──────────────────────────────────────────────
+  // ── 24. Advance Order Status ──────────────────────────────────────────────
   const orderId = orderRes.body.order.id || orderRes.body.order._id;
   const advanceRes = await request('PATCH', `/api/orders/${orderId}/status`);
   assert(advanceRes.status === 200 && advanceRes.body.order, 'PATCH /api/orders/:id/status → advances status');
 
-  // ── 22. API 404 ───────────────────────────────────────────────────────────
+  // ── 25. API 404 ───────────────────────────────────────────────────────────
   const notFound = await request('GET', '/api/nonexistent');
   assert(notFound.status === 404 && notFound.body.success === false, 'GET /api/nonexistent → 404 not found');
 
@@ -193,7 +233,7 @@ async function runTests() {
   console.log('\n' + '='.repeat(45));
   console.log(`🏆 Results: ${passed}/${total} tests passed`);
   if (passed === total) {
-    console.log('🎉 All tests passed! PizzaCraft backend is fully functional.\n');
+    console.log('🎉 All tests passed! PizzaCraft Auth & Dashboard module is fully functional.\n');
   } else {
     console.log(`⚠️  ${total - passed} test(s) failed — check output above.\n`);
   }

@@ -37,10 +37,20 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/auth');
 const blogsRoutes = require('./routes/blogs');
 const ordersRoutes = require('./routes/orders');
+const { protect } = require('./middleware/auth');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/blogs', blogsRoutes);
 app.use('/api/orders', ordersRoutes);
+
+// Protected dashboard stats endpoint (verifies JWT session)
+app.get('/api/dashboard/stats', protect, (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Authorized dashboard access.',
+    user: req.user
+  });
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

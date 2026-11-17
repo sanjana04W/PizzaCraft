@@ -1,15 +1,56 @@
 /**
  * PizzaCraft - Frontend API Client
  * Connects Frontend UI with Node.js & Express REST APIs
- * Features seamless fallback to localStorage if backend is unreachable or run from file://
+ * Features JWT Bearer Authentication & seamless fallback to localStorage
  */
 
 const API_BASE = (window.location.protocol === 'file:')
   ? 'http://localhost:5000'
   : '';
 
+const TOKEN_KEY = 'pizzacraft_token';
+const USER_KEY = 'pizzacraft_current_user';
+
 const API = {
-  // Check backend server health
+  // ── Token Management ────────────────────────────────────────────────────────
+  getToken() {
+    return localStorage.getItem(TOKEN_KEY) || '';
+  },
+
+  setToken(token) {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+  },
+
+  removeToken() {
+    localStorage.removeItem(TOKEN_KEY);
+  },
+
+  getCurrentUser() {
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  },
+
+  setCurrentUser(user) {
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+  },
+
+  removeCurrentUser() {
+    localStorage.removeItem(USER_KEY);
+  },
+
+  getAuthHeaders() {
+    const token = this.getToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  },
+
+  // ── Health Check ────────────────────────────────────────────────────────────
   async checkHealth() {
     try {
       const res = await fetch(`${API_BASE}/api/health`);
@@ -19,7 +60,7 @@ const API = {
     }
   },
 
-  // User Registration: POST /api/auth/register
+  // ── User Registration: POST /api/auth/register ──────────────────────────────
   async register(userData) {
     try {
       const response = await fetch(`${API_BASE}/api/auth/register`, {
@@ -28,6 +69,12 @@ const API = {
         body: JSON.stringify(userData)
       });
       const data = await response.json();
+      if (response.ok && data.token) {
+        this.setToken(data.token);
+      }
+      if (response.ok && data.user) {
+        this.setCurrentUser(data.user);
+      }
       return { ok: response.ok, status: response.status, data };
     } catch (err) {
       console.warn('Backend unavailable, using local fallback for register:', err);
@@ -35,7 +82,7 @@ const API = {
     }
   },
 
-  // User Login: POST /api/auth/login
+  // ── User Login: POST /api/auth/login ────────────────────────────────────────
   async login(credentials) {
     try {
       const response = await fetch(`${API_BASE}/api/auth/login`, {
@@ -44,6 +91,12 @@ const API = {
         body: JSON.stringify(credentials)
       });
       const data = await response.json();
+      if (response.ok && data.token) {
+        this.setToken(data.token);
+      }
+      if (response.ok && data.user) {
+        this.setCurrentUser(data.user);
+      }
       return { ok: response.ok, status: response.status, data };
     } catch (err) {
       console.warn('Backend unavailable, using local fallback for login:', err);
@@ -51,13 +104,73 @@ const API = {
     }
   },
 
-  // Fetch Blogs: GET /api/blogs
-  async getBlogs(category = 'all') {
+  // ── Get Authenticated User Profile: GET /api/auth/me (Protected) ────────────
+  async getMe() {
     try {
-      const url = (category && category !== 'all') 
-        ? `${API_BASE}/api/blogs?category=${encodeURIComponent(category)}`
-        : `${API_BASE}/api/blogs`;
-      
+      const response = await fetch(`${API_BASE}/api/auth/me`, {
+        headers: this.getAuthHeaders()
+      });
+      const data = await response.json();
+      if (response.ok && data.user) {
+        this.setCurrentUser(data.user);
+      }
+      return { ok: response.ok, status: response.status, data };
+    } catch (err) {
+      return { ok: false, networkError: true };
+    }
+  },
+
+  // ── Update Profile: PUT /api/auth/profile (Protected) ───────────────────────
+  async updateProfile(profileData) {
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/profile`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(profileData)
+      });
+      const data = await response.json();
+      if (response.ok && data.user) {
+        this.setCurrentUser(data.user);
+      }
+      return { ok: response.ok, status: response.status, data };
+    } catch (err) {
+      return { ok: false, networkError: true, error: err.message };
+    }
+  },
+
+  // ── Logout ──────────────────────────────────────────────────────────────────
+  async logout() {
+    try {
+      await fetch(`${API_BASE}/api/auth/logout`, {
+        method: 'POST',
+        headers: this.getAuthHeaders()
+      });
+    } catch {}
+    this.removeToken();
+    this.removeCurrentUser();
+  },
+
+  // ── Dashboard Protected Stats: GET /api/dashboard/stats ─────────────────────
+  async getDashboardStats() {
+    try {
+      const response = await fetch(`${API_BASE}/api/dashboard/stats`, {
+        headers: this.getAuthHeaders()
+      });
+      const data = await response.json();
+      return { ok: response.ok, status: response.status, data };
+    } catch (err) {
+      return { ok: false, networkError: true };
+    }
+  },
+
+  // ── Fetch Blogs: GET /api/blogs ─────────────────────────────────────────────
+  async getBlogs(category = 'all', authorEmail = '') {
+    try {
+      const params = new URLSearchParams();
+      if (category && category !== 'all') params.set('category', category);
+      if (authorEmail && authorEmail.trim()) params.set('authorEmail', authorEmail.trim());
+
+      const url = `${API_BASE}/api/blogs?${params.toString()}`;
       const response = await fetch(url);
       const data = await response.json();
       return { ok: response.ok, data };
@@ -67,13 +180,34 @@ const API = {
     }
   },
 
-  // Create Blog: POST /api/blogs
+  // ── Fetch Current User's Own Blogs: GET /api/blogs/user/me (Protected) ───────
+  async getMyBlogs() {
+    try {
+      const response = await fetch(`${API_BASE}/api/blogs/user/me`, {
+        headers: this.getAuthHeaders()
+      });
+      const data = await response.json();
+      return { ok: response.ok, status: response.status, data };
+    } catch (err) {
+      console.warn('Backend unavailable for getMyBlogs:', err);
+      return { ok: false, networkError: true };
+    }
+  },
+
+  // ── Create Blog: POST /api/blogs (Includes optional JWT auth) ───────────────
   async createBlog(blogData) {
     try {
+      const currentUser = this.getCurrentUser();
+      const payload = {
+        ...blogData,
+        authorEmail: blogData.authorEmail || currentUser?.email || '',
+        userId: blogData.userId || currentUser?.id || currentUser?._id || ''
+      };
+
       const response = await fetch(`${API_BASE}/api/blogs`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(blogData)
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       return { ok: response.ok, status: response.status, data };
@@ -83,7 +217,7 @@ const API = {
     }
   },
 
-  // Search Blogs: GET /api/blogs?search=&category=
+  // ── Search Blogs: GET /api/blogs?search=&category= ──────────────────────────
   async searchBlogs(search = '', category = 'all') {
     try {
       const params = new URLSearchParams();
@@ -97,7 +231,7 @@ const API = {
     }
   },
 
-  // Get Single Blog: GET /api/blogs/:id
+  // ── Get Single Blog: GET /api/blogs/:id ─────────────────────────────────────
   async getBlog(id) {
     try {
       const response = await fetch(`${API_BASE}/api/blogs/${encodeURIComponent(id)}`);
@@ -109,7 +243,7 @@ const API = {
     }
   },
 
-  // Like Blog: POST /api/blogs/:id/like
+  // ── Like Blog: POST /api/blogs/:id/like ─────────────────────────────────────
   async likeBlog(id, action = 'like') {
     try {
       const response = await fetch(`${API_BASE}/api/blogs/${encodeURIComponent(id)}/like`, {
@@ -124,12 +258,12 @@ const API = {
     }
   },
 
-  // Update Blog: PUT /api/blogs/:id
+  // ── Update Blog: PUT /api/blogs/:id ─────────────────────────────────────────
   async updateBlog(id, blogData) {
     try {
       const response = await fetch(`${API_BASE}/api/blogs/${encodeURIComponent(id)}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(blogData)
       });
       const data = await response.json();
@@ -140,11 +274,12 @@ const API = {
     }
   },
 
-  // Delete Blog: DELETE /api/blogs/:id
+  // ── Delete Blog: DELETE /api/blogs/:id ──────────────────────────────────────
   async deleteBlog(id) {
     try {
       const response = await fetch(`${API_BASE}/api/blogs/${encodeURIComponent(id)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: this.getAuthHeaders()
       });
       const data = await response.json();
       return { ok: response.ok, status: response.status, data };
@@ -154,7 +289,7 @@ const API = {
     }
   },
 
-  // Fetch Orders: GET /api/orders
+  // ── Fetch Orders: GET /api/orders ───────────────────────────────────────────
   async getOrders(email = '') {
     try {
       const url = email 
@@ -168,12 +303,12 @@ const API = {
     }
   },
 
-  // Create Order: POST /api/orders
+  // ── Create Order: POST /api/orders ──────────────────────────────────────────
   async createOrder(orderData) {
     try {
       const response = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(orderData)
       });
       const data = await response.json();
@@ -183,7 +318,7 @@ const API = {
     }
   },
 
-  // Advance Order Status: PATCH /api/orders/:id/status
+  // ── Advance Order Status: PATCH /api/orders/:id/status ──────────────────────
   async advanceOrderStatus(id) {
     try {
       const response = await fetch(`${API_BASE}/api/orders/${encodeURIComponent(id)}/status`, {

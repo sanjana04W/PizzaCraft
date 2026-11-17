@@ -3,10 +3,193 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customer Dashboard & Live Tracking | PizzaCraft</title>
+  <title>Customer Dashboard &amp; Profile | PizzaCraft</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    /* ── Dashboard Page Enhancements ── */
+    .dashboard-auth-gate {
+      text-align: center;
+      padding: 80px 24px;
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1.5px solid var(--gray-border);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+      max-width: 600px;
+      margin: 50px auto;
+    }
+    .auth-gate-icon { font-size: 4rem; margin-bottom: 16px; }
+    .auth-gate-title { font-size: 2rem; font-weight: 800; margin-bottom: 10px; color: var(--dark); }
+    .auth-gate-desc { color: var(--text-muted); line-height: 1.6; margin-bottom: 28px; font-size: 1rem; }
+
+    /* Profile Modal */
+    .profile-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s;
+    }
+    .profile-modal-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 2.2rem 2rem;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      animation: slideUp 0.25s;
+    }
+    .profile-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .profile-modal-header h3 { font-size: 1.35rem; margin: 0; color: #1a1a1a; font-weight: 800; }
+    .profile-modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #999;
+      line-height: 1;
+    }
+    .profile-modal-close:hover { color: #FF3838; }
+
+    /* User Blogs Grid */
+    .user-blogs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .user-blog-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1.5px solid var(--gray-border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .user-blog-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    }
+    .user-blog-card-img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+    }
+    .user-blog-card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .user-blog-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .user-blog-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin: 0 0 8px;
+      line-height: 1.35;
+    }
+    .user-blog-excerpt {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 14px;
+      flex: 1;
+    }
+    .user-blog-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #f0f0f0;
+      padding-top: 10px;
+      margin-top: auto;
+    }
+    .user-blog-actions a,
+    .user-blog-actions button {
+      padding: 0.3rem 0.7rem;
+      border-radius: 16px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .ubtn-view {
+      border: 1.5px solid #FF3838;
+      color: #FF3838;
+      background: transparent;
+    }
+    .ubtn-view:hover { background: #FF3838; color: #fff; }
+    .ubtn-edit {
+      border: 1.5px solid #3B82F6;
+      color: #3B82F6;
+      background: transparent;
+    }
+    .ubtn-edit:hover { background: #3B82F6; color: #fff; }
+    .ubtn-del {
+      border: 1.5px solid #EF4444;
+      color: #EF4444;
+      background: transparent;
+    }
+    .ubtn-del:hover { background: #EF4444; color: #fff; }
+
+    .user-blogs-empty {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--bg-body);
+      border-radius: var(--radius-md);
+      border: 1.5px dashed var(--gray-border);
+    }
+    .user-blogs-empty .empty-icon { font-size: 2.8rem; margin-bottom: 8px; }
+    .user-blogs-empty h4 { font-size: 1.15rem; margin-bottom: 6px; }
+    .user-blogs-empty p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px; }
+
+    /* Danger Logout Button */
+    .btn-logout-sidebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid #FEE2E2;
+      background: #FEF2F2;
+      color: #DC2626;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      margin-top: 14px;
+    }
+    .btn-logout-sidebar:hover {
+      background: #DC2626;
+      color: #fff;
+      border-color: #DC2626;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
 </head>
 <body>
 
@@ -16,6 +199,7 @@
       <span>🔥 <strong>PIZZA REWARDS:</strong> Earn 10 loyalty points per slice! Use code</span>
       <span class="announcement-code" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply PIZZA20">PIZZA20</span>
       <span class="announcement-tag">🛵 30-Min Live Tracking</span>
+      <span class="announcement-tag">🔒 Secure JWT Session</span>
     </div>
   </div>
 
@@ -29,7 +213,7 @@
 
       <nav class="nav-links" id="navLinks">
         <a href="index.html" class="nav-link">Home</a>
-        <a href="menu.html" class="nav-link">Menu & Order</a>
+        <a href="menu.html" class="nav-link">Menu &amp; Order</a>
         <a href="blog.html" class="nav-link">Pizza Stories</a>
         <a href="create-blog.html" class="nav-link">Create Blog</a>
         <a href="dashboard.html" class="nav-link active">Dashboard</a>
@@ -62,16 +246,22 @@
         <div class="user-welcome-card">
           <div class="user-avatar-lg" id="dashUserAvatar">J</div>
           <div>
-            <h1 style="font-size: 2rem; margin-bottom: 4px;">Welcome back, <span id="dashUserName">John Doe</span>!</h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;" id="dashUserEmail">john@example.com</p>
+            <h1 style="font-size: 2rem; margin-bottom: 4px;">Welcome back, <span id="dashUserName">Foodie</span>!</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;" id="dashUserEmail">Loading profile...</p>
           </div>
         </div>
 
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn btn-outline btn-sm" onclick="seedSampleOrder()" title="Simulate a live order right now">
-            ⚡ Simulate Live Order
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <button class="btn btn-outline btn-sm" onclick="openProfileModal()">
+            👤 Edit Profile
           </button>
-          <a href="menu.html" class="btn btn-primary">+ Order Fresh Pizza</a>
+          <button class="btn btn-outline btn-sm" onclick="seedSampleOrder()" title="Simulate a live order right now">
+            ⚡ Simulate Order
+          </button>
+          <a href="menu.html" class="btn btn-primary btn-sm">+ Order Fresh Pizza</a>
+          <button class="btn btn-outline btn-sm" onclick="logoutUser()" style="color:#DC2626;border-color:#FCA5A5;">
+            🚪 Logout
+          </button>
         </div>
       </div>
 
@@ -88,13 +278,21 @@
         <div class="stat-card">
           <div class="stat-card-icon bg-yellow-light">⭐</div>
           <div class="stat-card-info">
-            <h4 id="dashUserPoints">340 pts</h4>
+            <h4 id="dashUserPoints">0 pts</h4>
             <p>Pizza Club Loyalty Points</p>
           </div>
         </div>
 
         <div class="stat-card">
-          <div class="stat-card-icon bg-green-light">💰</div>
+          <div class="stat-card-icon bg-green-light">✍️</div>
+          <div class="stat-card-info">
+            <h4 id="statUserBlogsCount">0</h4>
+            <p>My Published Stories</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-icon bg-yellow-light">💰</div>
           <div class="stat-card-info">
             <h4 id="statTotalSpent">₹0</h4>
             <p>Total Spent</p>
@@ -113,25 +311,38 @@
           <a href="#activeOrders" class="dash-nav-link active">
             <span>🛵</span> Active Orders
           </a>
+          <a href="#myBlogsSection" class="dash-nav-link">
+            <span>✍️</span> My Pizza Stories
+          </a>
           <a href="#orderHistory" class="dash-nav-link">
             <span>📜</span> Order History
           </a>
-          <a href="create-blog.html" class="dash-nav-link">
-            <span>✍️</span> My Pizza Stories
+          <a href="javascript:void(0)" onclick="openProfileModal()" class="dash-nav-link">
+            <span>👤</span> Edit Profile
           </a>
 
           <hr style="border: none; border-top: 1px solid var(--gray-border); margin: 20px 0;">
 
-          <h4 style="font-size: 0.85rem; color: var(--gray-dark); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; font-weight: 800;">
-            Saved Delivery Profile
-          </h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="font-size: 0.85rem; color: var(--gray-dark); text-transform: uppercase; letter-spacing: 0.8px; margin: 0; font-weight: 800;">
+              Saved Delivery Profile
+            </h4>
+            <button onclick="openProfileModal()" style="background:none;border:none;color:#FF3838;font-size:0.78rem;font-weight:700;cursor:pointer;">
+              Edit
+            </button>
+          </div>
+
           <div style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6;">
-            <p style="margin-bottom: 8px;"><strong style="color: var(--dark);">Phone:</strong> <span id="dashUserPhone">+91 98765 43210</span></p>
+            <p style="margin-bottom: 8px;"><strong style="color: var(--dark);">Phone:</strong> <span id="dashUserPhone">+91 99999 88888</span></p>
             <p style="margin-bottom: 6px;"><strong style="color: var(--dark);">Delivery Address:</strong></p>
             <p style="background: var(--bg-body); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--gray-border); line-height: 1.5;" id="dashUserAddress">
-              42 Baker Street, Foodie Lane, Mumbai, MH
+              12 Pepperoni Avenue, Gourmet City
             </p>
           </div>
+
+          <button class="btn-logout-sidebar" onclick="logoutUser()">
+            <span>🚪</span> Sign Out of Account
+          </button>
         </aside>
 
         <!-- Right Main Panel -->
@@ -148,6 +359,21 @@
             </div>
           </div>
 
+          <!-- My Pizza Stories Section (Logged-in User's Blogs Only) -->
+          <div id="myBlogsSection" style="margin-top: 45px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="font-size: 1.45rem; margin: 0 0 4px;">My Pizza Stories</h3>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">Articles and recipes published by your account</p>
+              </div>
+              <a href="create-blog.html" class="btn btn-primary btn-sm">+ Write New Story</a>
+            </div>
+
+            <div id="userBlogsContainer">
+              <!-- Injected by js/dashboard.js -->
+            </div>
+          </div>
+
           <!-- Order History -->
           <div id="orderHistory" style="margin-top: 45px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -160,7 +386,7 @@
                 <thead>
                   <tr>
                     <th>Order #</th>
-                    <th>Date & Time</th>
+                    <th>Date &amp; Time</th>
                     <th>Ordered Items</th>
                     <th>Total</th>
                     <th>Status</th>
@@ -180,6 +406,40 @@
     </div>
   </main>
 
+  <!-- Edit Profile Modal -->
+  <div id="profileModal" style="display:none;">
+    <div class="profile-modal-backdrop" onclick="closeProfileModal()">
+      <div class="profile-modal-card" onclick="event.stopPropagation()">
+        <div class="profile-modal-header">
+          <h3>👤 Edit Profile Details</h3>
+          <button class="profile-modal-close" onclick="closeProfileModal()">&times;</button>
+        </div>
+        <form id="editProfileForm" onsubmit="handleProfileUpdate(event)">
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="profName" class="form-control" required>
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label">Email Address (Read-only)</label>
+            <input type="email" id="profEmail" class="form-control" disabled style="background:#f5f5f5;color:#888;">
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" id="profPhone" class="form-control" placeholder="+91 99999 88888">
+          </div>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Primary Delivery Address</label>
+            <textarea id="profAddress" class="form-control" rows="3" placeholder="Enter street, area, city"></textarea>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button type="button" class="btn btn-outline" onclick="closeProfileModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save Profile</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Cart Slide-Over Drawer -->
   <div class="cart-overlay" id="cartOverlay"></div>
   <aside class="cart-drawer" id="cartDrawer">
@@ -187,54 +447,28 @@
       <h3><span>🛒</span> Your Pizza Cart</h3>
       <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
     </div>
-
-    <!-- Free Delivery Progress Meter -->
     <div class="free-delivery-tracker" id="freeDeliveryTracker"></div>
-
     <div class="cart-body" id="cartDrawerItems"></div>
-
     <div class="cart-footer">
       <div class="coupon-chips-row">
         <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">Coupons:</span>
         <button class="coupon-chip" onclick="applyPromoCode('PIZZA20')">🏷️ PIZZA20 (-20%)</button>
         <button class="coupon-chip" onclick="applyPromoCode('FREESHIP')">🚚 FREESHIP</button>
       </div>
-
       <div style="margin-bottom: 14px; display: flex; gap: 8px;">
         <input type="text" id="promoInput" placeholder="Enter coupon code" class="form-control" style="padding: 9px 14px; font-size: 0.88rem; text-transform: uppercase;">
         <button class="btn btn-outline btn-sm" onclick="applyPromoCode(document.getElementById('promoInput').value)">Apply</button>
       </div>
-
-      <div class="cart-summary-row">
-        <span>Subtotal</span>
-        <span id="cartSubtotal">₹0.00</span>
-      </div>
+      <div class="cart-summary-row"><span>Subtotal</span><span id="cartSubtotal">₹0.00</span></div>
       <div class="cart-summary-row" id="cartDiscountRow" style="display: none; color: var(--accent); font-weight: 700;">
-        <span>Discount (20% OFF)</span>
-        <span id="cartDiscount">-₹0.00</span>
+        <span>Discount (20% OFF)</span><span id="cartDiscount">-₹0.00</span>
       </div>
-      <div class="cart-summary-row">
-        <span>Taxes & GST (5%)</span>
-        <span id="cartTax">₹0.00</span>
-      </div>
-      <div class="cart-summary-row">
-        <span>Delivery Fee</span>
-        <span id="cartDelivery">FREE</span>
-      </div>
-
-      <div class="cart-summary-total">
-        <span>Total Amount</span>
-        <span id="cartTotal">₹0.00</span>
-      </div>
-
-      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">
-        Proceed to Checkout ➔
-      </button>
-
+      <div class="cart-summary-row"><span>Taxes &amp; GST (5%)</span><span id="cartTax">₹0.00</span></div>
+      <div class="cart-summary-row"><span>Delivery Fee</span><span id="cartDelivery">FREE</span></div>
+      <div class="cart-summary-total"><span>Total Amount</span><span id="cartTotal">₹0.00</span></div>
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">Proceed to Checkout ➔</button>
       <div style="text-align: center; margin-top: 10px;">
-        <button onclick="clearCart()" style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">
-          Clear Cart
-        </button>
+        <button onclick="clearCart()" style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">Clear Cart</button>
       </div>
     </div>
   </aside>
@@ -248,11 +482,8 @@
             <span class="logo-icon">🍕</span>
             <div>Pizza<span>Craft</span></div>
           </a>
-          <p>
-            Handcrafted artisanal pizzas baked in 450°C wood-fired stone ovens and delivered piping hot.
-          </p>
+          <p>Handcrafted artisanal pizzas baked in 450°C wood-fired stone ovens and delivered piping hot.</p>
         </div>
-
         <div>
           <h4 class="footer-title">Navigation</h4>
           <ul class="footer-links">
@@ -263,7 +494,6 @@
             <li><a href="dashboard.html">Order Dashboard</a></li>
           </ul>
         </div>
-
         <div>
           <h4 class="footer-title">Support</h4>
           <ul class="footer-links">
@@ -272,20 +502,21 @@
             <li><a href="menu.html">Special Offers</a></li>
           </ul>
         </div>
-
         <div>
           <h4 class="footer-title">Kitchen Hotline</h4>
           <p style="font-size: 0.92rem; margin-bottom: 8px;">Order assistance: +91 (22) 8000-PIZZA</p>
           <p style="font-size: 0.88rem; color: #9CA3AF;">11:00 AM – 01:00 AM Daily</p>
         </div>
       </div>
-
       <div class="footer-bottom">
         <div>&copy; 2026 PizzaCraft. All Rights Reserved.</div>
-        <div>Crafted with Passion & Fresh Sourdough</div>
+        <div>Crafted with Passion &amp; Fresh Sourdough</div>
       </div>
     </div>
   </footer>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <!-- Scripts -->
   <script src="js/api.js"></script>

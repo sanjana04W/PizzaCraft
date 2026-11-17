@@ -1,6 +1,6 @@
 /**
  * PizzaCraft - Auth Routes
- * MongoDB primary storage with JSON file fallback
+ * JWT User Authentication with MongoDB primary storage + JSON file fallback
  */
 
 const express = require('express');
@@ -11,6 +11,7 @@ const path = require('path');
 
 const { isDbConnected } = require('../config/db');
 const User = require('../models/User');
+const { protect, generateToken } = require('../middleware/auth');
 
 const USERS_FILE = path.join(__dirname, '..', 'data', 'users.json');
 
@@ -90,10 +91,14 @@ router.post('/register', async (req, res) => {
       });
       await user.save();
 
+      const safeUser = user.toSafeObject();
+      const token = generateToken(safeUser);
+
       return res.status(201).json({
         success: true,
         message: 'Account created successfully! Welcome to PizzaCraft Club. 🎉',
-        user: user.toSafeObject()
+        token,
+        user: safeUser
       });
     }
 
@@ -118,10 +123,14 @@ router.post('/register', async (req, res) => {
     users.push(newUser);
     writeUsers(users);
 
+    const safeUser = sanitizeUser(newUser);
+    const token = generateToken(safeUser);
+
     return res.status(201).json({
       success: true,
       message: 'Account created successfully! Welcome to PizzaCraft Club. 🎉',
-      user: sanitizeUser(newUser)
+      token,
+      user: safeUser
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -145,10 +154,14 @@ router.post('/login', async (req, res) => {
       if (!user)
         return res.status(401).json({ success: false, message: 'Invalid email or password.' });
 
+      const safeUser = user.toSafeObject();
+      const token = generateToken(safeUser);
+
       return res.status(200).json({
         success: true,
         message: `Welcome back, ${user.name}! 🍕`,
-        user: user.toSafeObject()
+        token,
+        user: safeUser
       });
     }
 
@@ -162,10 +175,14 @@ router.post('/login', async (req, res) => {
     if (!isMatch)
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
 
+    const safeUser = sanitizeUser({ ...found });
+    const token = generateToken(safeUser);
+
     return res.status(200).json({
       success: true,
       message: `Welcome back, ${found.name}! 🍕`,
-      user: sanitizeUser({ ...found })
+      token,
+      user: safeUser
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -173,7 +190,86 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ─── GET /api/auth/users ──────────────────────────────────────────────────────
+// ─── GET /api/auth/me (Protected: returns authenticated user profile) ─────────
+router.get('/me', protect, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+
+    if (isDbConnected()) {
+      const user = await User.findOne({ email: userEmail }).select('-password -__v').lean();
+      if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+      return res.status(200).json({
+        success: true,
+        user: { ...user, id: user._id.toString() }
+      });
+    }
+
+    const users = readUsers();
+    const found = users.find(u => u.email === userEmail);
+    if (!found) return res.status(404).json({ success: false, message: 'User not found.' });
+    return res.status(200).json({
+      success: true,
+      user: sanitizeUser({ ...found })
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Error fetching profile.' });
+  }
+});
+
+// ─── PUT /api/auth/profile (Protected: updates user profile) ──────────────────
+router.put('/profile', protect, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { name, phone, address } = req.body;
+
+    const updates = {};
+    if (name && name.trim()) updates.name = name.trim();
+    if (phone !== undefined) updates.phone = phone.trim();
+    if (address !== undefined) updates.address = address.trim();
+
+    if (isDbConnected()) {
+      const updated = await User.findOneAndUpdate(
+        { email: userEmail },
+        updates,
+        { new: true, runValidators: true }
+      ).select('-password -__v').lean();
+
+      if (!updated) return res.status(404).json({ success: false, message: 'User not found.' });
+      return res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully!',
+        user: { ...updated, id: updated._id.toString() }
+      });
+    }
+
+    // JSON fallback
+    const users = readUsers();
+    const idx = users.findIndex(u => u.email === userEmail);
+    if (idx === -1) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    users[idx] = { ...users[idx], ...updates };
+    writeUsers(users);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully!',
+      user: sanitizeUser({ ...users[idx] })
+    });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    return res.status(500).json({ success: false, message: 'Error updating profile.' });
+  }
+});
+
+// ─── POST /api/auth/logout ────────────────────────────────────────────────────
+router.post('/logout', (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully.'
+  });
+});
+
+// ─── GET /api/auth/users (Sanitized list for demo/admin) ──────────────────────
 router.get('/users', async (req, res) => {
   try {
     if (isDbConnected()) {

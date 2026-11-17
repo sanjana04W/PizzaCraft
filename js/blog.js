@@ -338,7 +338,16 @@ async function handleCreateBlog(e) {
   }
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Publishing...'; }
 
-  const payload = { title, category, author, image, content };
+  const currentUser = window.PizzaCraftAPI ? window.PizzaCraftAPI.getCurrentUser() : null;
+  const payload = {
+    title,
+    category,
+    author,
+    authorEmail: currentUser?.email || '',
+    userId: currentUser?.id || currentUser?._id || '',
+    image,
+    content
+  };
 
   if (window.PizzaCraftAPI) {
     const res = await window.PizzaCraftAPI.createBlog(payload);
@@ -384,7 +393,16 @@ async function handleUpdateBlog(e) {
   }
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving Changes...'; }
 
-  const payload = { title, category, author, image, content };
+  const currentUser = window.PizzaCraftAPI ? window.PizzaCraftAPI.getCurrentUser() : null;
+  const payload = {
+    title,
+    category,
+    author,
+    authorEmail: currentUser?.email || '',
+    userId: currentUser?.id || currentUser?._id || '',
+    image,
+    content
+  };
 
   if (window.PizzaCraftAPI) {
     const res = await window.PizzaCraftAPI.updateBlog(blogId, payload);
@@ -485,7 +503,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Create Blog form
   const blogForm = document.getElementById('createBlogForm');
-  if (blogForm) blogForm.addEventListener('submit', handleCreateBlog);
+  if (blogForm) {
+    blogForm.addEventListener('submit', handleCreateBlog);
+    const currentUser = window.PizzaCraftAPI ? window.PizzaCraftAPI.getCurrentUser() : null;
+    const authorInput = document.getElementById('blogAuthor');
+    if (authorInput && currentUser && !authorInput.value) {
+      authorInput.value = currentUser.name;
+    }
+  }
 
   // Edit Blog form
   const editForm = document.getElementById('editBlogForm');

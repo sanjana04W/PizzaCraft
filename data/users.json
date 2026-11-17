@@ -1,11 +1,11 @@
 [
   {
     "id": "usr_demo_101",
-    "name": "John Doe",
+    "name": "John Artisan Doe",
     "email": "john@example.com",
     "password": "$2b$12$8ZSkYhiPztxMOAuHAvRx/eD7Z8IQ4CgF.bk50lQsdV1gJ9HF/sWHq",
-    "phone": "+91 98765 43210",
-    "address": "42 Baker Street, Foodie Lane, Mumbai, MH",
+    "phone": "+91 98888 77777",
+    "address": "77 Mozzarella Boulevard, Gourmet City",
     "loyaltyPoints": 340,
     "joinedDate": "Jan 2026"
   },
@@ -34,6 +34,16 @@
     "name": "Test Chef",
     "email": "testchef_1794926493873@example.com",
     "password": "$2b$12$wzDi86OvnsuWsv0NgPl9..ppdakcZ3hKHWp/TlNmQLN.9l.MYvhe6",
+    "phone": "+91 91234 56789",
+    "address": "99 Olive Lane, Gourmet City",
+    "loyaltyPoints": 120,
+    "joinedDate": "Nov 2026"
+  },
+  {
+    "id": "usr_1794929552691",
+    "name": "Chef Alessandro",
+    "email": "testchef_1794929552295@example.com",
+    "password": "$2b$12$LnPMAZn2Rr.fvdfSXXB3CeEfOhi73B1y2IbLbHYgXoJrz1Li/9P6m",
     "phone": "+91 91234 56789",
     "address": "99 Olive Lane, Gourmet City",
     "loyaltyPoints": 120,

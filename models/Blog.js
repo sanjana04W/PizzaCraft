@@ -26,6 +26,16 @@ const blogSchema = new mongoose.Schema(
       required: [true, 'Author name is required'],
       trim: true
     },
+    authorEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      default: ''
+    },
+    userId: {
+      type: String,
+      default: ''
+    },
     avatar: {
       type: String,
       default: function () {

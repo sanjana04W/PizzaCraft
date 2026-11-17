@@ -288,6 +288,10 @@ function checkUserSession() {
 
 function logoutUser() {
   localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem('pizzacraft_token');
+  if (window.PizzaCraftAPI && typeof window.PizzaCraftAPI.logout === 'function') {
+    try { window.PizzaCraftAPI.logout(); } catch {}
+  }
   showToast('Logged out successfully. See you soon! 👋', 'info');
   setTimeout(() => {
     window.location.href = 'index.html';
