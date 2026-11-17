@@ -3,10 +3,30 @@
     "id": "usr_demo_101",
     "name": "John Doe",
     "email": "john@example.com",
-    "password": "password123",
+    "password": "$2b$12$8ZSkYhiPztxMOAuHAvRx/eD7Z8IQ4CgF.bk50lQsdV1gJ9HF/sWHq",
     "phone": "+91 98765 43210",
     "address": "42 Baker Street, Foodie Lane, Mumbai, MH",
     "loyaltyPoints": 340,
     "joinedDate": "Jan 2026"
+  },
+  {
+    "id": "usr_1794925001864",
+    "name": "Test Chef",
+    "email": "testchef_1794925001572@example.com",
+    "password": "$2b$12$9rBuzR9TMfx8xn4UhsClF.GuTSQXtpLBrfbplInrbsBJlXw1tbHnu",
+    "phone": "+91 91234 56789",
+    "address": "99 Olive Lane, Gourmet City",
+    "loyaltyPoints": 120,
+    "joinedDate": "Nov 2026"
+  },
+  {
+    "id": "usr_1794925065442",
+    "name": "Test Chef",
+    "email": "testchef_1794925065165@example.com",
+    "password": "$2b$12$gV/i59I0nr92te7CNi8Dd.WnLBf4fbx2Ze3zb6ZA5OoiSIq92rg5i",
+    "phone": "+91 91234 56789",
+    "address": "99 Olive Lane, Gourmet City",
+    "loyaltyPoints": 120,
+    "joinedDate": "Nov 2026"
   }
 ]

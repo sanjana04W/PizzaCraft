@@ -83,6 +83,18 @@ const API = {
     }
   },
 
+  // Get Single Blog: GET /api/blogs/:id
+  async getBlog(id) {
+    try {
+      const response = await fetch(`${API_BASE}/api/blogs/${encodeURIComponent(id)}`);
+      const data = await response.json();
+      return { ok: response.ok, data };
+    } catch (err) {
+      console.warn('Backend unavailable for getBlog:', err);
+      return { ok: false, networkError: true };
+    }
+  },
+
   // Like Blog: POST /api/blogs/:id/like
   async likeBlog(id, action = 'like') {
     try {

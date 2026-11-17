@@ -1,12 +1,16 @@
 /**
  * PizzaCraft - Backend Server
- * Node.js & Express REST API Server
+ * Node.js & Express REST API Server with MongoDB (Mongoose) + JSON fallback
  */
+
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+
+const { connectDB } = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,10 +44,12 @@ app.use('/api/orders', ordersRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const { isDbConnected } = require('./config/db');
   res.status(200).json({
     status: 'healthy',
     service: 'PizzaCraft Backend API',
-    version: '1.0.0',
+    version: '2.0.0',
+    database: isDbConnected() ? 'MongoDB Connected' : 'JSON Fallback (MongoDB offline)',
     timestamp: new Date().toISOString()
   });
 });
@@ -59,7 +65,7 @@ app.use('/api', (req, res) => {
   });
 });
 
-// Default fallback to index.html for root navigation
+// Default fallback to index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -75,25 +81,34 @@ app.use((err, req, res, next) => {
 
 // Start Server
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      const { isDbConnected } = require('./config/db');
+      const dbStatus = isDbConnected()
+        ? '🍃 MongoDB Connected'
+        : '📁 JSON File Storage (MongoDB offline – app still runs!)';
+
+      console.log(`
 ==================================================
 🍕 PizzaCraft Server Running Successfully!
 🚀 Backend REST API: http://localhost:${PORT}/api/health
-🌐 Web Application:   http://localhost:${PORT}
+🌐 Web Application:  http://localhost:${PORT}
+🗄  Database:         ${dbStatus}
 ==================================================
 Available Endpoints:
-  POST /api/auth/register    - User Registration
-  POST /api/auth/login       - User Login
-  GET  /api/auth/users       - List Registered Users
-  GET  /api/blogs            - Get All Pizza Stories
-  POST /api/blogs            - Create New Blog Article
-  POST /api/blogs/:id/like   - Toggle Story Like
-  GET  /api/orders           - Get Orders
-  POST /api/orders           - Place Pizza Order
-  PATCH /api/orders/:id/status - Advance Order Stage
+  POST  /api/auth/register        - User Registration
+  POST  /api/auth/login           - User Login
+  GET   /api/auth/users           - List Users
+  GET   /api/blogs                - Get All Pizza Stories
+  GET   /api/blogs/:id            - Get Single Blog
+  POST  /api/blogs                - Create New Blog Article
+  POST  /api/blogs/:id/like       - Toggle Story Like
+  GET   /api/orders               - Get Orders
+  POST  /api/orders               - Place Pizza Order
+  PATCH /api/orders/:id/status    - Advance Order Stage
 ==================================================
-    `);
+      `);
+    });
   });
 }
 

@@ -1,180 +1,187 @@
+/**
+ * PizzaCraft - Auth Routes
+ * MongoDB primary storage with JSON file fallback
+ */
+
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 
+const { isDbConnected } = require('../config/db');
+const User = require('../models/User');
+
 const USERS_FILE = path.join(__dirname, '..', 'data', 'users.json');
 
-// Helper to read users
+// ─── JSON Helpers ─────────────────────────────────────────────────────────────
 function readUsers() {
   try {
-    if (!fs.existsSync(USERS_FILE)) {
-      return [];
-    }
-    const data = fs.readFileSync(USERS_FILE, 'utf8');
-    return JSON.parse(data || '[]');
-  } catch (err) {
-    console.error('Error reading users file:', err);
-    return [];
-  }
+    if (!fs.existsSync(USERS_FILE)) return [];
+    return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8') || '[]');
+  } catch { return []; }
 }
 
-// Helper to write users
 function writeUsers(users) {
   try {
     fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
     return true;
+  } catch { return false; }
+}
+
+function sanitizeUser(user) {
+  const { password, __v, ...safe } = user;
+  return safe;
+}
+
+// ─── Seed Demo User to MongoDB (runs once on first connection) ────────────────
+let seeded = false;
+async function seedDemoUser() {
+  if (seeded) return;
+  seeded = true;
+  try {
+    const exists = await User.findOne({ email: 'john@example.com' });
+    if (!exists) {
+      await User.create({
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'pizza123',
+        phone: '+91 98765 43210',
+        address: '12 Pepperoni Avenue, Gourmet City',
+        loyaltyPoints: 350
+      });
+      console.log('🌱 Demo user seeded to MongoDB');
+    }
   } catch (err) {
-    console.error('Error writing users file:', err);
-    return false;
+    console.warn('⚠️  Demo user seed skipped:', err.message);
   }
 }
 
-// Helper to sanitize user object (exclude password)
-function sanitizeUser(user) {
-  const { password, ...safeUser } = user;
-  return safeUser;
-}
-
-/**
- * @route   POST /api/auth/register
- * @desc    Register a new user
- * @access  Public
- */
-router.post('/register', (req, res) => {
+// ─── POST /api/auth/register ──────────────────────────────────────────────────
+router.post('/register', async (req, res) => {
   try {
     const { name, email, password, phone, address } = req.body;
 
-    // Field validation
-    if (!name || typeof name !== 'string' || !name.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Full name is required.'
-      });
-    }
+    if (!name || !name.trim())
+      return res.status(400).json({ success: false, message: 'Full name is required.' });
 
-    if (!email || typeof email !== 'string' || !email.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email address is required.'
-      });
-    }
-
-    // Basic email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid email address.'
-      });
-    }
+    if (!email || !emailRegex.test(email.trim()))
+      return res.status(400).json({ success: false, message: 'Valid email address is required.' });
 
-    if (!password || typeof password !== 'string' || password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters long.'
-      });
-    }
+    if (!password || password.length < 6)
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
 
-    const users = readUsers();
     const cleanEmail = email.trim().toLowerCase();
 
-    // Check for duplicate user
-    const existingUser = users.find(u => u.email.toLowerCase() === cleanEmail);
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'An account with this email address already exists.'
+    // ── MongoDB path ──
+    if (isDbConnected()) {
+      await seedDemoUser();
+      const existing = await User.findOne({ email: cleanEmail });
+      if (existing)
+        return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+
+      const user = new User({
+        name: name.trim(),
+        email: cleanEmail,
+        password,
+        phone: phone?.trim() || '+91 99999 88888',
+        address: address?.trim() || '12 Pepperoni Avenue, Gourmet City'
+      });
+      await user.save();
+
+      return res.status(201).json({
+        success: true,
+        message: 'Account created successfully! Welcome to PizzaCraft Club. 🎉',
+        user: user.toSafeObject()
       });
     }
 
-    // Create new user
+    // ── JSON fallback ──
+    const users = readUsers();
+    if (users.find(u => u.email === cleanEmail))
+      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+
+    const salt = await bcrypt.genSalt(12);
+    const hashedPw = await bcrypt.hash(password, salt);
+
     const newUser = {
       id: 'usr_' + Date.now(),
       name: name.trim(),
       email: cleanEmail,
-      password: password, // Note: In production use bcrypt
-      phone: (phone && phone.trim()) ? phone.trim() : '+91 99999 88888',
-      address: (address && address.trim()) ? address.trim() : '12 Pepperoni Avenue, Gourmet City',
-      loyaltyPoints: 120, // 120 Welcome bonus points
+      password: hashedPw,
+      phone: phone?.trim() || '+91 99999 88888',
+      address: address?.trim() || '12 Pepperoni Avenue, Gourmet City',
+      loyaltyPoints: 120,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     };
-
     users.push(newUser);
-    const saved = writeUsers(users);
-
-    if (!saved) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to save user account. Please try again.'
-      });
-    }
+    writeUsers(users);
 
     return res.status(201).json({
       success: true,
-      message: 'Account created successfully! Welcome to PizzaCraft Club.',
+      message: 'Account created successfully! Welcome to PizzaCraft Club. 🎉',
       user: sanitizeUser(newUser)
     });
   } catch (error) {
     console.error('Registration error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error during registration.'
-    });
+    return res.status(500).json({ success: false, message: 'Internal server error during registration.' });
   }
 });
 
-/**
- * @route   POST /api/auth/login
- * @desc    Authenticate user & return details
- * @access  Public
- */
-router.post('/login', (req, res) => {
+// ─── POST /api/auth/login ─────────────────────────────────────────────────────
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ success: false, message: 'Please provide both email and password.' });
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide both email and password.'
-      });
-    }
-
-    const users = readUsers();
     const cleanEmail = email.trim().toLowerCase();
 
-    const matchedUser = users.find(u => 
-      u.email.toLowerCase() === cleanEmail && u.password === password
-    );
+    // ── MongoDB path ──
+    if (isDbConnected()) {
+      await seedDemoUser();
+      const user = await User.findByCredentials(cleanEmail, password);
+      if (!user)
+        return res.status(401).json({ success: false, message: 'Invalid email or password.' });
 
-    if (!matchedUser) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password. Please try again.'
+      return res.status(200).json({
+        success: true,
+        message: `Welcome back, ${user.name}! 🍕`,
+        user: user.toSafeObject()
       });
     }
+
+    // ── JSON fallback ──
+    const users = readUsers();
+    const found = users.find(u => u.email === cleanEmail);
+    if (!found)
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+
+    const isMatch = await bcrypt.compare(password, found.password);
+    if (!isMatch)
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
 
     return res.status(200).json({
       success: true,
-      message: `Welcome back, ${matchedUser.name}!`,
-      user: sanitizeUser(matchedUser)
+      message: `Welcome back, ${found.name}! 🍕`,
+      user: sanitizeUser({ ...found })
     });
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error during login.'
-    });
+    return res.status(500).json({ success: false, message: 'Internal server error during login.' });
   }
 });
 
-/**
- * @route   GET /api/auth/users
- * @desc    Get all users (sanitized)
- * @access  Public (for review / demo)
- */
-router.get('/users', (req, res) => {
+// ─── GET /api/auth/users ──────────────────────────────────────────────────────
+router.get('/users', async (req, res) => {
   try {
+    if (isDbConnected()) {
+      const users = await User.find({}).select('-password -__v').lean();
+      const mapped = users.map(u => ({ ...u, id: u._id.toString() }));
+      return res.status(200).json({ success: true, count: mapped.length, users: mapped });
+    }
+
     const users = readUsers();
     return res.status(200).json({
       success: true,
@@ -182,10 +189,7 @@ router.get('/users', (req, res) => {
       users: users.map(sanitizeUser)
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error fetching users.'
-    });
+    return res.status(500).json({ success: false, message: 'Error fetching users.' });
   }
 });
 
