@@ -1,5 +1,6 @@
 /**
  * PizzaCraft - Menu Catalog & Product Interaction
+ * Featuring Customizer Modal, Inline Card Quantity Controllers, Instant Search & Sorting
  */
 
 const PIZZA_MENU_DATA = [
@@ -120,7 +121,7 @@ const PIZZA_MENU_DATA = [
     name: 'Artisan Garlic Dough Knots',
     category: 'sides',
     tag: 'Sides',
-    badgeClass: 'badge-special',
+    badgeClass: 'badge-sides',
     price: 199,
     rating: 4.9,
     reviews: 310,
@@ -134,7 +135,7 @@ const PIZZA_MENU_DATA = [
     name: 'Nutella Berry Dessert Pizza',
     category: 'dessert',
     tag: 'Sweet Treat',
-    badgeClass: 'badge-special',
+    badgeClass: 'badge-dessert',
     price: 329,
     rating: 4.9,
     reviews: 175,
@@ -147,10 +148,24 @@ const PIZZA_MENU_DATA = [
 
 let currentFilter = 'all';
 let searchQuery = '';
+let currentSort = 'recommended';
+let lastTargetGridId = 'pizzasGrid';
+let lastLimit = null;
+
+// Customizer state
+let activeCustomPizza = null;
+let selectedSize = 'regular'; // regular, medium, large
+let selectedCrust = 'classic'; // classic, thin, stuffed
+let selectedAddons = [];
 
 function renderPizzas(targetContainerId = 'pizzasGrid', limit = null) {
+  lastTargetGridId = targetContainerId;
+  lastLimit = limit;
+
   const container = document.getElementById(targetContainerId);
   if (!container) return;
+
+  const cart = (typeof getCart === 'function') ? getCart() : [];
 
   let filtered = PIZZA_MENU_DATA.filter(pizza => {
     const matchesFilter = (currentFilter === 'all') || (pizza.category === currentFilter);
@@ -159,43 +174,108 @@ function renderPizzas(targetContainerId = 'pizzasGrid', limit = null) {
     return matchesFilter && matchesSearch;
   });
 
+  // Sorting
+  if (currentSort === 'price-low') {
+    filtered.sort((a, b) => a.price - b.price);
+  } else if (currentSort === 'price-high') {
+    filtered.sort((a, b) => b.price - a.price);
+  } else if (currentSort === 'rating') {
+    filtered.sort((a, b) => b.rating - a.rating);
+  }
+
   if (limit && typeof limit === 'number') {
     filtered = filtered.slice(0, limit);
   }
 
+  // Update category counts on filter pills if on menu page
+  updateFilterCounts();
+
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
-        <h3 style="font-size: 1.4rem; margin-bottom: 8px;">No pizzas match your search</h3>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">Try another keyword or category filter above.</p>
-        <button class="btn btn-outline btn-sm" style="margin-top: 16px;" onclick="resetFilter()">Reset Filters</button>
+      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--gray-border);">
+        <div style="font-size: 3rem; margin-bottom: 12px;">🔍</div>
+        <h3 style="font-size: 1.4rem; margin-bottom: 8px;">No delicious items match your search</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">Try another keyword or reset the category filters above.</p>
+        <button class="btn btn-primary btn-sm" style="margin-top: 18px;" onclick="resetFilter()">Reset Filters</button>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = filtered.map(pizza => `
-    <article class="pizza-card">
-      <span class="pizza-badge ${pizza.badgeClass}">${pizza.tag}</span>
-      <div class="pizza-image-wrap">
-        <img src="${pizza.image}" alt="${pizza.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600'">
-      </div>
-      <div class="pizza-content">
-        <div class="pizza-title-row">
-          <h3 class="pizza-title">${pizza.name}</h3>
-          <span class="pizza-rating">★ ${pizza.rating}</span>
+  container.innerHTML = filtered.map(pizza => {
+    const cartItem = cart.find(i => i.id === pizza.id);
+    const qty = cartItem ? cartItem.quantity : 0;
+
+    return `
+      <article class="pizza-card" data-id="${pizza.id}">
+        <span class="pizza-badge ${pizza.badgeClass}">${pizza.tag}</span>
+        
+        <div class="pizza-image-wrap" onclick="openPizzaCustomizer('${pizza.id}')" title="Click to customize pizza">
+          <img src="${pizza.image}" alt="${pizza.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600'">
+          <span class="quick-view-overlay-btn">✨ Customize</span>
         </div>
-        <p class="pizza-desc">${pizza.desc}</p>
-        <div class="pizza-footer">
-          <span class="pizza-price">₹${pizza.price}</span>
-          <button class="add-cart-btn" onclick="handleAddToCart('${pizza.id}')">
-            <span>+ Add to Cart</span>
-          </button>
+
+        <div class="pizza-content">
+          <div class="pizza-title-row">
+            <h3 class="pizza-title" onclick="openPizzaCustomizer('${pizza.id}')">${pizza.name}</h3>
+            <span class="pizza-rating" title="${pizza.reviews} customer ratings">★ ${pizza.rating}</span>
+          </div>
+          
+          <div class="pizza-meta-pills">
+            <span class="meta-pill">⏱️ ${pizza.prepTime}</span>
+            <span class="meta-pill">🔥 ${pizza.calories}</span>
+          </div>
+
+          <p class="pizza-desc">${pizza.desc}</p>
+          
+          <div class="pizza-footer">
+            <div class="pizza-price-wrap">
+              <span class="pizza-price-label">Price</span>
+              <span class="pizza-price">₹${pizza.price}</span>
+            </div>
+
+            <div class="pizza-action-area" id="action-${pizza.id}">
+              ${qty > 0 ? `
+                <div class="card-qty-ctrl">
+                  <button class="card-qty-btn" onclick="updateCartQty('${pizza.id}', -1)" title="Reduce slice">-</button>
+                  <span class="card-qty-value">${qty}</span>
+                  <button class="card-qty-btn" onclick="updateCartQty('${pizza.id}', 1)" title="Add another slice">+</button>
+                </div>
+              ` : `
+                <button class="add-cart-btn" onclick="handleAddToCart('${pizza.id}')">
+                  <span>+ Add to Cart</span>
+                </button>
+              `}
+            </div>
+          </div>
         </div>
-      </div>
-    </article>
-  `).join('');
+      </article>
+    `;
+  }).join('');
 }
+
+// Update filter counts
+function updateFilterCounts() {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    const filter = btn.getAttribute('data-filter');
+    const countElem = btn.querySelector('.filter-count');
+    if (countElem) {
+      if (filter === 'all') {
+        countElem.textContent = PIZZA_MENU_DATA.length;
+      } else {
+        const count = PIZZA_MENU_DATA.filter(p => p.category === filter).length;
+        countElem.textContent = count;
+      }
+    }
+  });
+}
+
+// Listen to cart updates to refresh inline buttons
+window.addEventListener('cartUpdated', () => {
+  if (document.getElementById(lastTargetGridId)) {
+    renderPizzas(lastTargetGridId, lastLimit);
+  }
+});
 
 function handleAddToCart(id) {
   const pizza = PIZZA_MENU_DATA.find(p => p.id === id);
@@ -210,32 +290,290 @@ function handleAddToCart(id) {
   }
 }
 
+// ==========================================
+// PIZZA CUSTOMIZER MODAL
+// ==========================================
+function ensureCustomizerModalExists() {
+  if (document.getElementById('customizerModalOverlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'customizer-modal-overlay';
+  overlay.id = 'customizerModalOverlay';
+
+  overlay.innerHTML = `
+    <div class="customizer-modal" id="customizerModalCard">
+      <button class="modal-close-btn" onclick="closePizzaCustomizer()">&times;</button>
+      
+      <div class="modal-header-visual">
+        <img id="customizerImg" src="" alt="Pizza">
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-title-row">
+          <h2 class="modal-title" id="customizerTitle">Pizza Name</h2>
+          <span class="pizza-rating" id="customizerRating">★ 4.9</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.92rem;" id="customizerDesc"></p>
+
+        <!-- Size Selection -->
+        <div class="modal-options-group">
+          <div class="modal-group-title">
+            <span>1. Choose Crust Size</span>
+            <span class="tag">Select one</span>
+          </div>
+          <div class="option-pills-grid" id="customizerSizePills">
+            <div class="option-pill-btn active" data-size="regular" onclick="selectSize('regular', 0)">
+              <span class="name">Regular (8")</span>
+              <span class="price">Base</span>
+            </div>
+            <div class="option-pill-btn" data-size="medium" onclick="selectSize('medium', 149)">
+              <span class="name">Medium (10")</span>
+              <span class="price">+₹149</span>
+            </div>
+            <div class="option-pill-btn" data-size="large" onclick="selectSize('large', 279)">
+              <span class="name">Large (12")</span>
+              <span class="price">+₹279</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crust Choice -->
+        <div class="modal-options-group">
+          <div class="modal-group-title">
+            <span>2. Select Artisanal Crust</span>
+            <span class="tag">Handcrafted</span>
+          </div>
+          <div class="option-pills-grid" id="customizerCrustPills">
+            <div class="option-pill-btn active" data-crust="classic" onclick="selectCrust('classic', 0)">
+              <span class="name">Sourdough</span>
+              <span class="price">Included</span>
+            </div>
+            <div class="option-pill-btn" data-crust="thin" onclick="selectCrust('thin', 0)">
+              <span class="name">Thin & Crisp</span>
+              <span class="price">Included</span>
+            </div>
+            <div class="option-pill-btn" data-crust="stuffed" onclick="selectCrust('stuffed', 75)">
+              <span class="name">Cheese Burst</span>
+              <span class="price">+₹75</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Extra Gourmet Toppings -->
+        <div class="modal-options-group">
+          <div class="modal-group-title">
+            <span>3. Extra Gourmet Add-ons</span>
+            <span class="tag">Optional</span>
+          </div>
+          <div class="toppings-grid">
+            <label class="topping-checkbox-label">
+              <span><input type="checkbox" onchange="toggleAddon('Extra Buffalo Mozzarella', 49, this)"> Extra Mozzarella</span>
+              <span style="color: var(--primary);">+₹49</span>
+            </label>
+            <label class="topping-checkbox-label">
+              <span><input type="checkbox" onchange="toggleAddon('Fire Jalapenos', 29, this)"> Jalapeno Kick</span>
+              <span style="color: var(--primary);">+₹29</span>
+            </label>
+            <label class="topping-checkbox-label">
+              <span><input type="checkbox" onchange="toggleAddon('Roasted Garlic Oil', 29, this)"> Roasted Garlic</span>
+              <span style="color: var(--primary);">+₹29</span>
+            </label>
+            <label class="topping-checkbox-label">
+              <span><input type="checkbox" onchange="toggleAddon('White Truffle Drizzle', 69, this)"> Truffle Glaze</span>
+              <span style="color: var(--primary);">+₹69</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Price</span>
+          <div style="font-size: 1.5rem; font-weight: 900; color: var(--dark);" id="modalTotalPrice">₹0</div>
+        </div>
+        <button class="btn btn-primary" onclick="confirmCustomPizza()">
+          Add Customized Pizza ➔
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Close when clicking outside
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closePizzaCustomizer();
+  });
+}
+
+function openPizzaCustomizer(id) {
+  ensureCustomizerModalExists();
+  const pizza = PIZZA_MENU_DATA.find(p => p.id === id);
+  if (!pizza) return;
+
+  activeCustomPizza = pizza;
+  selectedSize = 'regular';
+  selectedCrust = 'classic';
+  selectedAddons = [];
+
+  document.getElementById('customizerImg').src = pizza.image;
+  document.getElementById('customizerTitle').textContent = pizza.name;
+  document.getElementById('customizerRating').textContent = `★ ${pizza.rating}`;
+  document.getElementById('customizerDesc').textContent = pizza.desc;
+
+  // Reset pills
+  document.querySelectorAll('#customizerSizePills .option-pill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-size') === 'regular');
+  });
+  document.querySelectorAll('#customizerCrustPills .option-pill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-crust') === 'classic');
+  });
+
+  // Reset checkboxes
+  document.querySelectorAll('.topping-checkbox-label input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.topping-checkbox-label').classList.remove('checked');
+  });
+
+  updateCustomizerTotal();
+
+  const overlay = document.getElementById('customizerModalOverlay');
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePizzaCustomizer() {
+  const overlay = document.getElementById('customizerModalOverlay');
+  if (overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function selectSize(size, extraCost) {
+  selectedSize = size;
+  document.querySelectorAll('#customizerSizePills .option-pill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-size') === size);
+  });
+  updateCustomizerTotal();
+}
+
+function selectCrust(crust, extraCost) {
+  selectedCrust = crust;
+  document.querySelectorAll('#customizerCrustPills .option-pill-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-crust') === crust);
+  });
+  updateCustomizerTotal();
+}
+
+function toggleAddon(name, price, checkbox) {
+  checkbox.closest('.topping-checkbox-label').classList.toggle('checked', checkbox.checked);
+  if (checkbox.checked) {
+    selectedAddons.push({ name, price });
+  } else {
+    selectedAddons = selectedAddons.filter(a => a.name !== name);
+  }
+  updateCustomizerTotal();
+}
+
+function calculateCustomTotal() {
+  if (!activeCustomPizza) return 0;
+  let total = activeCustomPizza.price;
+
+  if (selectedSize === 'medium') total += 149;
+  if (selectedSize === 'large') total += 279;
+  if (selectedCrust === 'stuffed') total += 75;
+
+  selectedAddons.forEach(a => total += a.price);
+  return total;
+}
+
+function updateCustomizerTotal() {
+  const total = calculateCustomTotal();
+  const elem = document.getElementById('modalTotalPrice');
+  if (elem) elem.textContent = `₹${total}`;
+}
+
+function confirmCustomPizza() {
+  if (!activeCustomPizza) return;
+
+  const total = calculateCustomTotal();
+  const sizeNames = { regular: '8" Reg', medium: '10" Med', large: '12" Lrg' };
+  const crustNames = { classic: 'Sourdough', thin: 'Thin Crust', stuffed: 'Cheese Burst' };
+
+  const customsDesc = [
+    sizeNames[selectedSize],
+    crustNames[selectedCrust],
+    ...selectedAddons.map(a => a.name)
+  ].join(' • ');
+
+  const customId = `${activeCustomPizza.id}-${selectedSize}-${selectedCrust}-${selectedAddons.map(a => a.name[0]).join('')}`;
+
+  addToCart({
+    id: customId,
+    name: activeCustomPizza.name,
+    price: total,
+    image: activeCustomPizza.image,
+    category: activeCustomPizza.category,
+    customs: customsDesc
+  });
+
+  closePizzaCustomizer();
+  setTimeout(openCartDrawer, 300);
+}
+
+// Filter and Search Handlers
 function setMenuFilter(filterType) {
   currentFilter = filterType;
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-filter') === filterType);
   });
-  renderPizzas();
+  renderPizzas(lastTargetGridId, lastLimit);
 }
 
 function resetFilter() {
   currentFilter = 'all';
   searchQuery = '';
+  currentSort = 'recommended';
+  
   const searchInput = document.getElementById('menuSearchInput');
   if (searchInput) searchInput.value = '';
+  
+  const clearBtn = document.getElementById('searchClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+
+  const sortSelect = document.getElementById('menuSortSelect');
+  if (sortSelect) sortSelect.value = 'recommended';
+
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-filter') === 'all');
   });
-  renderPizzas();
+
+  renderPizzas(lastTargetGridId, lastLimit);
 }
 
 // Bind search and filter events
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('menuSearchInput');
+  const clearBtn = document.getElementById('searchClearBtn');
+
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.trim();
-      renderPizzas();
+      if (clearBtn) {
+        clearBtn.style.display = searchQuery ? 'flex' : 'none';
+      }
+      renderPizzas(lastTargetGridId, lastLimit);
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchQuery = '';
+        clearBtn.style.display = 'none';
+        renderPizzas(lastTargetGridId, lastLimit);
+        searchInput.focus();
+      }
     });
   }
 
@@ -246,6 +584,14 @@ document.addEventListener('DOMContentLoaded', () => {
       setMenuFilter(filter);
     });
   });
+
+  const sortSelect = document.getElementById('menuSortSelect');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', (e) => {
+      currentSort = e.target.value;
+      renderPizzas(lastTargetGridId, lastLimit);
+    });
+  }
 
   // Check URL parameters for search or openCart
   const urlParams = new URLSearchParams(window.location.search);

@@ -10,6 +10,15 @@
 </head>
 <body>
 
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container announcement-inner">
+      <span>🔥 <strong>SIGN UP BONUS:</strong> Get 120 Pizza Club Points & <strong>20% OFF</strong> with coupon</span>
+      <span class="announcement-code" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply PIZZA20">PIZZA20</span>
+      <span class="announcement-tag">🛵 30-Min Fast Delivery</span>
+    </div>
+  </div>
+
   <!-- Sticky Navbar -->
   <header class="site-header">
     <div class="container navbar">
@@ -29,6 +38,7 @@
       <div class="nav-actions">
         <button class="cart-btn" id="openCartBtn" aria-label="View Cart">
           <span>🛒</span>
+          <span style="font-size: 0.9rem;">Cart</span>
           <span class="cart-count">0</span>
         </button>
 
@@ -50,39 +60,44 @@
         <div class="auth-header">
           <span class="logo-icon">🍕</span>
           <h1 class="auth-title">Join PizzaCraft Club</h1>
-          <p class="auth-subtitle">Get 100 bonus loyalty points upon sign up!</p>
+          <p class="auth-subtitle">Unlock member perks, order tracking, and 120 welcome bonus slices!</p>
         </div>
 
-        <div id="authError" style="color: var(--primary); font-size: 0.88rem; font-weight: 600; margin-bottom: 16px; text-align: center;"></div>
+        <div id="authError" style="color: var(--primary); font-size: 0.88rem; font-weight: 700; margin-bottom: 16px; text-align: center;"></div>
 
         <form id="registerForm" onsubmit="handleRegister(event)">
           <div class="form-group">
-            <label for="regName" class="form-label">Full Name</label>
-            <input type="text" id="regName" class="form-control" placeholder="e.g. Alex Johnson" required>
+            <label for="regName" class="form-label">Full Name *</label>
+            <input type="text" id="regName" class="form-control" placeholder="e.g. Sarah Jenkins" required autocomplete="name">
           </div>
 
           <div class="form-group">
-            <label for="regEmail" class="form-label">Email Address</label>
-            <input type="email" id="regEmail" class="form-control" placeholder="name@example.com" required>
+            <label for="regEmail" class="form-label">Email Address *</label>
+            <input type="email" id="regEmail" class="form-control" placeholder="sarah@example.com" required autocomplete="email">
           </div>
 
           <div class="form-group">
-            <label for="regPhone" class="form-label">Mobile Number</label>
-            <input type="tel" id="regPhone" class="form-control" placeholder="+91 98765 43210" required>
+            <label for="regPhone" class="form-label">Phone Number (For Delivery SMS)</label>
+            <input type="tel" id="regPhone" class="form-control" placeholder="+91 98765 43210" autocomplete="tel">
           </div>
 
           <div class="form-group">
-            <label for="regPassword" class="form-label">Create Password</label>
-            <input type="password" id="regPassword" class="form-control" placeholder="At least 6 characters" minlength="6" required>
+            <label for="regPassword" class="form-label">Password * (Min. 6 chars)</label>
+            <div style="position: relative;">
+              <input type="password" id="regPassword" class="form-control" placeholder="••••••••" required autocomplete="new-password" style="padding-right: 42px;">
+              <button type="button" onclick="togglePasswordVisibility('regPassword', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; color: var(--gray-medium); cursor: pointer;" title="Show/Hide Password">
+                👁️
+              </button>
+            </div>
           </div>
 
           <div class="form-group">
-            <label for="regConfirmPassword" class="form-label">Confirm Password</label>
-            <input type="password" id="regConfirmPassword" class="form-control" placeholder="Re-type password" required>
+            <label for="regConfirmPassword" class="form-label">Confirm Password *</label>
+            <input type="password" id="regConfirmPassword" class="form-control" placeholder="••••••••" required autocomplete="new-password">
           </div>
 
-          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
-            Create Free Account ➔
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 10px;">
+            Create Account & Claim Bonus ➔
           </button>
         </form>
 
@@ -98,23 +113,26 @@
   <aside class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
       <h3><span>🛒</span> Your Pizza Cart</h3>
-      <button class="close-drawer-btn" id="closeCartBtn">&times;</button>
+      <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
     </div>
+    <div class="free-delivery-tracker" id="freeDeliveryTracker"></div>
     <div class="cart-body" id="cartDrawerItems"></div>
     <div class="cart-footer">
       <div class="cart-summary-total">
         <span>Total Amount</span>
         <span id="cartTotal">₹0.00</span>
       </div>
-      <button class="btn btn-primary checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">Proceed to Checkout</button>
     </div>
   </aside>
 
   <!-- Footer -->
   <footer class="site-footer">
-    <div class="container footer-bottom" style="border: none; padding-top: 0;">
-      <div>&copy; 2026 PizzaCraft. Secure Authenticated Platform.</div>
-      <div><a href="index.html" style="color: var(--primary);">Return to Homepage</a></div>
+    <div class="container">
+      <div class="footer-bottom">
+        <div>&copy; 2026 PizzaCraft. All Rights Reserved.</div>
+        <div>Fresh Dough Handcrafted Daily</div>
+      </div>
     </div>
   </footer>
 

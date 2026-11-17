@@ -1,8 +1,10 @@
 /**
  * PizzaCraft - Blog & Culinary Stories Module
+ * Interactive Likes, Category Filters, Image Previews, and Story Publishing
  */
 
 const BLOGS_STORAGE_KEY = 'pizzacraft_blogs';
+const BLOG_LIKES_STORAGE_KEY = 'pizzacraft_blog_likes';
 
 const INITIAL_BLOGS = [
   {
@@ -13,6 +15,7 @@ const INITIAL_BLOGS = [
     avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=100&auto=format&fit=crop&q=80',
     date: 'Feb 12, 2026',
     readTime: '5 min read',
+    likes: 42,
     image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&auto=format&fit=crop&q=80',
     content: 'Dough fermentation is both chemistry and passion. By retarding yeast activity at 4°C for 72 hours, enzymes break down complex starches into natural sugars, yielding that prized bubbly leopard-spotted cornicione (crust) that is light, airy, and gentle on digestion.'
   },
@@ -24,6 +27,7 @@ const INITIAL_BLOGS = [
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
     date: 'Jan 28, 2026',
     readTime: '4 min read',
+    likes: 89,
     image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800&auto=format&fit=crop&q=80',
     content: 'Grown in the mineral-rich volcanic soil beneath Mount Vesuvius, authentic San Marzano tomatoes boast an unmistakable bittersweet flavor profile, lower acidity, and thick pulp that creates the velvety red base our pizzas are celebrated for.'
   },
@@ -35,6 +39,7 @@ const INITIAL_BLOGS = [
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
     date: 'Jan 15, 2026',
     readTime: '6 min read',
+    likes: 64,
     image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&auto=format&fit=crop&q=80',
     content: 'Not all cheese melts identically. Achieving that picture-perfect stretch without greasiness requires balancing high-moisture fresh Fior di Latte with aged whole-milk curd, flash-baked at 450°C for exactly 90 seconds.'
   }
@@ -47,36 +52,92 @@ function getBlogs() {
     localStorage.setItem(BLOGS_STORAGE_KEY, JSON.stringify(INITIAL_BLOGS));
     return INITIAL_BLOGS;
   }
-  return JSON.parse(stored);
+  try {
+    return JSON.parse(stored);
+  } catch (e) {
+    return INITIAL_BLOGS;
+  }
 }
 
-// Render Blog List on blog.html
-function renderBlogs() {
-  const container = document.getElementById('blogsContainer');
+// User liked blogs set
+function getUserLikes() {
+  try {
+    return JSON.parse(localStorage.getItem(BLOG_LIKES_STORAGE_KEY) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+let activeBlogFilter = 'all';
+
+// Render Blog List on blog.html and homepage
+function renderBlogs(targetId = 'blogsContainer', limit = null) {
+  const container = document.getElementById(targetId);
   if (!container) return;
 
-  const blogs = getBlogs();
+  let blogs = getBlogs();
+  const userLikes = getUserLikes();
 
-  container.innerHTML = blogs.map(blog => `
-    <article class="blog-card">
-      <img src="${blog.image}" alt="${blog.title}" class="blog-card-img" onerror="this.src='https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600'">
-      <div class="blog-card-body">
-        <div class="blog-meta">
-          <span class="blog-category-tag">${blog.category}</span>
-          <span>•</span>
-          <span>${blog.readTime || '4 min read'}</span>
-          <span>•</span>
-          <span>${blog.date}</span>
+  if (activeBlogFilter !== 'all') {
+    blogs = blogs.filter(b => b.category === activeBlogFilter);
+  }
+
+  if (limit && typeof limit === 'number') {
+    blogs = blogs.slice(0, limit);
+  }
+
+  container.innerHTML = blogs.map(blog => {
+    const isLiked = userLikes.includes(blog.id);
+    const likeCount = (blog.likes || 0) + (isLiked ? 1 : 0);
+
+    return `
+      <article class="blog-card">
+        <img src="${blog.image}" alt="${blog.title}" class="blog-card-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600'">
+        <div class="blog-card-body">
+          <div class="blog-meta">
+            <span class="blog-category-tag">${blog.category}</span>
+            <span>⏱️ ${blog.readTime || '4 min read'}</span>
+            <span>📅 ${blog.date}</span>
+          </div>
+          <h3 class="blog-title">${blog.title}</h3>
+          <p class="blog-excerpt">${blog.content.substring(0, 140)}...</p>
+          <div class="blog-footer-row">
+            <div class="blog-author">
+              <img src="${blog.avatar}" alt="${blog.author}" class="author-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(blog.author)}'">
+              <span>${blog.author}</span>
+            </div>
+            <button class="blog-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleBlogLike('${blog.id}', this)" title="Appreciate this story">
+              <span>❤️</span> <span>${likeCount}</span>
+            </button>
+          </div>
         </div>
-        <h3 class="blog-title">${blog.title}</h3>
-        <p class="blog-excerpt">${blog.content.substring(0, 140)}...</p>
-        <div class="blog-author">
-          <img src="${blog.avatar}" alt="${blog.author}" class="author-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(blog.author)}'">
-          <span>${blog.author}</span>
-        </div>
-      </div>
-    </article>
-  `).join('');
+      </article>
+    `;
+  }).join('');
+}
+
+function filterBlogs(category) {
+  activeBlogFilter = category;
+  document.querySelectorAll('.blog-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-category') === category);
+  });
+  renderBlogs();
+}
+
+function toggleBlogLike(blogId, btnElem) {
+  let userLikes = getUserLikes();
+  const alreadyLiked = userLikes.includes(blogId);
+
+  if (alreadyLiked) {
+    userLikes = userLikes.filter(id => id !== blogId);
+    showToast('Removed like', 'info');
+  } else {
+    userLikes.push(blogId);
+    showToast('❤️ Thank you for liking this story!', 'success');
+  }
+
+  localStorage.setItem(BLOG_LIKES_STORAGE_KEY, JSON.stringify(userLikes));
+  renderBlogs();
 }
 
 // Handle Blog Creation on create-blog.html
@@ -99,48 +160,61 @@ function handleCreateBlog(e) {
     title,
     category,
     author,
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=FF4757&color=fff`,
+    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=FF3838&color=fff`,
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    readTime: `${Math.max(1, Math.ceil(content.split(' ').length / 150))} min read`,
+    readTime: `${Math.max(2, Math.round(content.split(' ').length / 100))} min read`,
     image,
-    content
+    content,
+    likes: 1
   };
 
   const blogs = getBlogs();
   blogs.unshift(newBlog);
   localStorage.setItem(BLOGS_STORAGE_KEY, JSON.stringify(blogs));
 
-  showToast('🎉 Blog post published successfully!', 'success');
+  showToast('🎉 Your pizza story has been published to the community!', 'success');
   setTimeout(() => {
     window.location.href = 'blog.html';
   }, 1000);
 }
 
-// Live Image URL Preview
-function setupImagePreview() {
-  const imageInput = document.getElementById('blogImage');
-  const previewImg = document.getElementById('imagePreview');
-  const previewWrapper = document.getElementById('imagePreviewWrapper');
+// Helper to prefill sample data in create blog
+function prefillSampleBlog() {
+  document.getElementById('blogTitle').value = 'Mastering 500°C Cast Iron Pizza in a Domestic Oven';
+  document.getElementById('blogCategory').value = 'Dough Science';
+  document.getElementById('blogAuthor').value = 'Chef Giovanni';
+  document.getElementById('blogImage').value = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800';
+  document.getElementById('blogContent').value = 'By preheating an inverted heavy cast iron skillet under your maximum domestic broiler setting for 45 minutes, you can simulate Neapolitan stone oven radiant heat and get blistered, bubbly crust in just 3 minutes at home!';
+  
+  updateLiveImagePreview('https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800');
+  showToast('Sample article loaded! Review and click publish.', 'info');
+}
 
-  if (imageInput && previewImg && previewWrapper) {
-    imageInput.addEventListener('input', () => {
-      const url = imageInput.value.trim();
-      if (url) {
-        previewImg.src = url;
-        previewWrapper.style.display = 'block';
-      } else {
-        previewWrapper.style.display = 'none';
-      }
-    });
+function updateLiveImagePreview(url) {
+  const previewWrapper = document.getElementById('imagePreviewWrapper');
+  const previewImg = document.getElementById('imagePreview');
+  if (previewWrapper && previewImg) {
+    if (url && url.startsWith('http')) {
+      previewImg.src = url;
+      previewWrapper.style.display = 'block';
+    } else {
+      previewWrapper.style.display = 'none';
+    }
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   renderBlogs();
-  setupImagePreview();
 
-  const createBlogForm = document.getElementById('createBlogForm');
-  if (createBlogForm) {
-    createBlogForm.addEventListener('submit', handleCreateBlog);
+  const blogForm = document.getElementById('createBlogForm');
+  if (blogForm) {
+    blogForm.addEventListener('submit', handleCreateBlog);
+  }
+
+  const imageInput = document.getElementById('blogImage');
+  if (imageInput) {
+    imageInput.addEventListener('input', (e) => {
+      updateLiveImagePreview(e.target.value.trim());
+    });
   }
 });

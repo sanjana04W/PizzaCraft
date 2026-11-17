@@ -3,12 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Menu & Order Online | PizzaCraft</title>
+  <title>Artisanal Menu & Online Ordering | PizzaCraft</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
+
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container announcement-inner">
+      <span>🔥 <strong>FLASH FEAST:</strong> Save <strong>20% OFF</strong> today with coupon</span>
+      <span class="announcement-code" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply PIZZA20">PIZZA20</span>
+      <span class="announcement-tag">🛵 Free Delivery > ₹499</span>
+      <span class="announcement-tag">⚡ 30-Min Fast Guarantee</span>
+    </div>
+  </div>
 
   <!-- Sticky Navbar -->
   <header class="site-header">
@@ -29,6 +39,7 @@
       <div class="nav-actions">
         <button class="cart-btn" id="openCartBtn" aria-label="View Cart">
           <span>🛒</span>
+          <span style="font-size: 0.9rem;">Cart</span>
           <span class="cart-count">0</span>
         </button>
 
@@ -43,34 +54,68 @@
     </div>
   </header>
 
-  <!-- Page Header -->
-  <section style="background: radial-gradient(circle at center, #FFF4E5 0%, #FBF9F5 100%); padding: 50px 0 30px; text-align: center;">
+  <!-- Page Header & Filter Controls -->
+  <section style="background: radial-gradient(circle at center, #FFF4E5 0%, #FAF7F2 100%); padding: 50px 0 25px; text-align: center;">
     <div class="container">
-      <span class="section-tag">Fresh From The Oven</span>
-      <h1 class="section-title" style="font-size: 2.8rem;">Explore Our Artisanal Menu</h1>
-      <p class="section-subtitle" style="max-width: 550px; margin: 0 auto 24px;">
-        Every pizza is individually hand-stretched, topped with fresh artisanal ingredients, and baked to blistered perfection.
+      <span class="section-tag">Fresh From The Stone Oven</span>
+      <h1 class="section-title" style="font-size: 3rem;">Explore Our Artisanal Menu</h1>
+      <p class="section-subtitle" style="max-width: 600px; margin: 0 auto 28px;">
+        Hand-stretched sourdough, slow simmered San Marzano sauce, and blistered mozzarella crust. Customize any pizza with your favorite size and toppings!
       </p>
 
-      <!-- Search Input -->
-      <div class="search-box-wrapper">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="menuSearchInput" class="search-input" placeholder="Search by name, cheese, topping, or flavor...">
-      </div>
+      <div class="menu-controls-wrapper">
+        <!-- Search Input with Clear Button -->
+        <div class="search-box-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="menuSearchInput" class="search-input" placeholder="Search by name, cheese, topping, or flavor...">
+          <button class="search-clear-btn" id="searchClearBtn" aria-label="Clear search">✕</button>
+        </div>
 
-      <!-- Category Filter Pills -->
-      <div class="menu-filter-bar">
-        <button class="filter-btn active" data-filter="all">🍕 All Items</button>
-        <button class="filter-btn" data-filter="veg">🌱 Pure Veg</button>
-        <button class="filter-btn" data-filter="nonveg">🍗 Gourmet Meat</button>
-        <button class="filter-btn" data-filter="sides">🥖 Garlic Sides</button>
-        <button class="filter-btn" data-filter="dessert">🍫 Sweet Treats</button>
+        <!-- Category Filter Pills -->
+        <div class="menu-filter-bar">
+          <button class="filter-btn active" data-filter="all">
+            <span>🍕 All Items</span>
+            <span class="filter-count">10</span>
+          </button>
+          <button class="filter-btn" data-filter="veg">
+            <span>🌱 Pure Veg</span>
+            <span class="filter-count">5</span>
+          </button>
+          <button class="filter-btn" data-filter="nonveg">
+            <span>🍗 Gourmet Meat</span>
+            <span class="filter-count">3</span>
+          </button>
+          <button class="filter-btn" data-filter="sides">
+            <span>🥖 Garlic Sides</span>
+            <span class="filter-count">1</span>
+          </button>
+          <button class="filter-btn" data-filter="dessert">
+            <span>🍫 Sweet Treats</span>
+            <span class="filter-count">1</span>
+          </button>
+        </div>
+
+        <!-- Sub-controls: Sort & Tips -->
+        <div class="menu-sub-controls">
+          <div style="color: var(--text-muted); font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+            <span>✨ <strong>Pro-Tip:</strong> Click any pizza or "Customize" to personalize size, crust & extra toppings!</span>
+          </div>
+          <div class="sort-select-wrapper">
+            <span>Sort by:</span>
+            <select id="menuSortSelect" class="sort-select">
+              <option value="recommended">⭐ Recommended</option>
+              <option value="rating">★ Highest Customer Rating</option>
+              <option value="price-low">💰 Price: Low to High</option>
+              <option value="price-high">💎 Price: High to Low</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Menu Grid Section -->
-  <section class="section" style="padding-top: 20px;">
+  <section class="section" style="padding-top: 25px; padding-bottom: 80px;">
     <div class="container">
       <div class="pizzas-grid" id="pizzasGrid">
         <!-- Loaded dynamically via js/menu.js -->
@@ -83,16 +128,26 @@
   <aside class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
       <h3><span>🛒</span> Your Pizza Cart</h3>
-      <button class="close-drawer-btn" id="closeCartBtn">&times;</button>
+      <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
     </div>
+
+    <!-- Free Delivery Progress Meter -->
+    <div class="free-delivery-tracker" id="freeDeliveryTracker"></div>
 
     <div class="cart-body" id="cartDrawerItems">
       <!-- Items dynamically populated -->
     </div>
 
     <div class="cart-footer">
+      <!-- Quick Coupon Chips -->
+      <div class="coupon-chips-row">
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">Coupons:</span>
+        <button class="coupon-chip" onclick="applyPromoCode('PIZZA20')">🏷️ PIZZA20 (-20%)</button>
+        <button class="coupon-chip" onclick="applyPromoCode('FREESHIP')">🚚 FREESHIP</button>
+      </div>
+
       <div style="margin-bottom: 14px; display: flex; gap: 8px;">
-        <input type="text" id="promoInput" placeholder="Enter coupon (e.g. PIZZA20)" class="form-control" style="padding: 8px 12px; font-size: 0.88rem; text-transform: uppercase;">
+        <input type="text" id="promoInput" placeholder="Enter coupon code" class="form-control" style="padding: 9px 14px; font-size: 0.88rem; text-transform: uppercase;">
         <button class="btn btn-outline btn-sm" onclick="applyPromoCode(document.getElementById('promoInput').value)">Apply</button>
       </div>
 
@@ -100,7 +155,7 @@
         <span>Subtotal</span>
         <span id="cartSubtotal">₹0.00</span>
       </div>
-      <div class="cart-summary-row" id="cartDiscountRow" style="display: none; color: var(--accent);">
+      <div class="cart-summary-row" id="cartDiscountRow" style="display: none; color: var(--accent); font-weight: 700;">
         <span>Discount (20% OFF)</span>
         <span id="cartDiscount">-₹0.00</span>
       </div>
@@ -118,13 +173,19 @@
         <span id="cartTotal">₹0.00</span>
       </div>
 
-      <button class="btn btn-primary checkout-btn" onclick="proceedToCheckout()">
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">
         Proceed to Checkout ➔
       </button>
+
+      <div style="text-align: center; margin-top: 10px;">
+        <button onclick="clearCart()" style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">
+          Clear Cart
+        </button>
+      </div>
     </div>
   </aside>
 
-  <!-- Site Footer -->
+  <!-- Footer -->
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
@@ -143,8 +204,8 @@
           <ul class="footer-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="menu.html">Full Menu</a></li>
-            <li><a href="blog.html">Culinary Blog</a></li>
-            <li><a href="create-blog.html">Create a Blog Post</a></li>
+            <li><a href="blog.html">Pizza Stories</a></li>
+            <li><a href="create-blog.html">Create a Blog</a></li>
             <li><a href="dashboard.html">Order Dashboard</a></li>
           </ul>
         </div>
@@ -160,8 +221,8 @@
 
         <div>
           <h4 class="footer-title">Kitchen Hotline</h4>
-          <p style="font-size: 0.9rem; margin-bottom: 8px;">Order assistance: +91 (22) 8000-PIZZA</p>
-          <p style="font-size: 0.88rem; color: var(--gray-medium);">11:00 AM – 01:00 AM Daily</p>
+          <p style="font-size: 0.92rem; margin-bottom: 8px;">Order assistance: +91 (22) 8000-PIZZA</p>
+          <p style="font-size: 0.88rem; color: #9CA3AF;">11:00 AM – 01:00 AM Daily</p>
         </div>
       </div>
 

@@ -10,6 +10,16 @@
 </head>
 <body>
 
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container announcement-inner">
+      <span>🔥 <strong>HOT DEAL:</strong> Get <strong>20% OFF</strong> with coupon code</span>
+      <span class="announcement-code" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply PIZZA20">PIZZA20</span>
+      <span class="announcement-tag">🛵 Free Delivery > ₹499</span>
+      <span class="announcement-tag">⚡ 30-Min Fast Guarantee</span>
+    </div>
+  </div>
+
   <!-- Sticky Navbar -->
   <header class="site-header">
     <div class="container navbar">
@@ -29,6 +39,7 @@
       <div class="nav-actions">
         <button class="cart-btn" id="openCartBtn" aria-label="View Cart">
           <span>🛒</span>
+          <span style="font-size: 0.9rem;">Cart</span>
           <span class="cart-count">0</span>
         </button>
 
@@ -47,31 +58,31 @@
   <section class="hero-section">
     <div class="container hero-grid">
       <div class="hero-content">
-        <div class="hero-tag">🔥 100% Wood-Fired Neapolitan Crust</div>
+        <div class="hero-tag">🔥 100% Wood-Fired Neapolitan Sourdough</div>
         <h1 class="hero-title">
           Authentic Italian Flavors, <br>
           <span class="highlight">Delivered Hot</span> to Your Door.
         </h1>
         <p class="hero-desc">
-          Crafted with 72-hour slow fermented sourdough, genuine San Marzano tomatoes, and creamy buffalo mozzarella. Experience true artisanal pizza delivery in under 30 minutes.
+          Crafted with 72-hour slow-fermented sourdough, authentic volcanic San Marzano tomatoes, and creamy buffalo mozzarella. Experience true artisanal pizza delivery in under 30 minutes.
         </p>
         <div class="hero-btns">
           <a href="menu.html" class="btn btn-primary btn-lg">Order Online Now ➔</a>
-          <a href="blog.html" class="btn btn-outline btn-lg">Read Our Stories</a>
+          <a href="blog.html" class="btn btn-outline btn-lg">Explore Pizza Stories</a>
         </div>
 
         <div class="hero-stats">
           <div class="stat-item">
             <h3>30 Mins</h3>
-            <p>Guaranteed Fast Delivery</p>
+            <p>Express Fast Delivery</p>
           </div>
           <div class="stat-item">
             <h3>4.9 ★</h3>
-            <p>Over 15,000+ Happy Foodies</p>
+            <p>15,000+ Happy Foodies</p>
           </div>
           <div class="stat-item">
             <h3>100%</h3>
-            <p>Fresh Handcrafted Dough</p>
+            <p>Natural Fermented Dough</p>
           </div>
         </div>
       </div>
@@ -94,7 +105,7 @@
           <div class="icon-box">⚡</div>
           <div>
             <h4>Lightning Delivery</h4>
-            <p>Piping Hot at Your Doorstep</p>
+            <p>Thermal Sealed & Steaming Hot</p>
           </div>
         </div>
       </div>
@@ -141,15 +152,17 @@
       <div class="section-header">
         <span class="section-tag">Chef's Top Picks</span>
         <h2 class="section-title">Most Loved Artisanal Pizzas</h2>
-        <p class="section-subtitle">Freshly tossed, topped with gourmet ingredients, and baked to perfection.</p>
+        <p class="section-subtitle">Freshly tossed, topped with gourmet ingredients, and baked to blistered perfection.</p>
       </div>
 
       <div class="pizzas-grid" id="featuredPizzasGrid">
         <!-- Rendered by menu.js -->
       </div>
 
-      <div style="text-align: center; margin-top: 40px;">
-        <a href="menu.html" class="btn btn-outline btn-lg">View Entire Menu (10+ Items) ➔</a>
+      <div style="text-align: center; margin-top: 45px;">
+        <a href="menu.html" class="btn btn-outline btn-lg" style="box-shadow: var(--shadow-sm);">
+          View Entire Menu (10+ Items) ➔
+        </a>
       </div>
     </div>
   </section>
@@ -161,14 +174,15 @@
         <div>
           <span class="promo-tag">Limited Time Feast</span>
           <h2 class="promo-title">Craving a Slice? Get 20% OFF Your First Delivery!</h2>
-          <p class="promo-desc">Use code at checkout to unlock savings on all classic and signature gourmet pizzas.</p>
-          <div class="promo-code-pill">
+          <p class="promo-desc">Use code at checkout to unlock instant savings on all classic and signature gourmet pizzas.</p>
+          <div class="promo-code-pill" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply code">
             <span>PROMO CODE:</span>
             <strong>PIZZA20</strong>
+            <span style="font-size: 0.75rem; background: rgba(255,255,255,0.25); padding: 2px 6px; border-radius: 4px;">TAP TO APPLY</span>
           </div>
         </div>
         <div style="text-align: center;">
-          <a href="menu.html" class="btn btn-primary btn-lg" style="background: var(--secondary); color: var(--dark); font-weight: 800;">
+          <a href="menu.html" class="btn btn-secondary btn-lg" style="font-weight: 800;">
             Claim Offer Now ➔
           </a>
         </div>
@@ -177,7 +191,7 @@
   </section>
 
   <!-- Latest Blog Posts / Culinary Stories Preview -->
-  <section class="section" style="background: #F8F5F0;">
+  <section class="section" style="background: linear-gradient(180deg, #F9F6F0 0%, #FAF7F2 100%);">
     <div class="container">
       <div class="section-header">
         <span class="section-tag">Pizza Culture & Recipes</span>
@@ -189,7 +203,7 @@
         <!-- Rendered by blog.js -->
       </div>
 
-      <div style="text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 14px;">
+      <div style="text-align: center; margin-top: 45px; display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
         <a href="blog.html" class="btn btn-outline">Explore All Stories</a>
         <a href="create-blog.html" class="btn btn-primary">+ Share Your Pizza Story</a>
       </div>
@@ -202,34 +216,35 @@
       <div class="section-header">
         <span class="section-tag">Happy Foodies</span>
         <h2 class="section-title">What Our Customers Say</h2>
+        <p class="section-subtitle">Over 15,000 pizza aficionados trust our ovens daily.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
-        <div style="background: var(--white); padding: 30px; border-radius: var(--radius-md); border: 1px solid var(--gray-border); box-shadow: var(--shadow-sm);">
-          <div style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 12px;">★★★★★</div>
-          <p style="font-size: 0.95rem; color: var(--gray-dark); margin-bottom: 18px;">
+        <div style="background: var(--white); padding: 32px; border-radius: var(--radius-lg); border: 1.5px solid var(--gray-border); box-shadow: var(--shadow-sm); position: relative;">
+          <div style="color: #F39C12; font-size: 1.15rem; margin-bottom: 12px;">★★★★★</div>
+          <p style="font-size: 0.98rem; color: var(--gray-dark); margin-bottom: 20px; line-height: 1.6;">
             "The Truffle Mushroom pizza is absolutely out of this world! The crust has that distinctive sourdough tang and perfect blistered char. Delivered in 24 minutes!"
           </p>
-          <div style="font-weight: 700; color: var(--dark);">Ananya Sharma</div>
-          <div style="font-size: 0.82rem; color: var(--text-muted);">Verified Foodie • Mumbai</div>
+          <div style="font-weight: 800; color: var(--dark); font-size: 1.05rem;">Ananya Sharma</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Verified Foodie • Mumbai</div>
         </div>
 
-        <div style="background: var(--white); padding: 30px; border-radius: var(--radius-md); border: 1px solid var(--gray-border); box-shadow: var(--shadow-sm);">
-          <div style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 12px;">★★★★★</div>
-          <p style="font-size: 0.95rem; color: var(--gray-dark); margin-bottom: 18px;">
+        <div style="background: var(--white); padding: 32px; border-radius: var(--radius-lg); border: 1.5px solid var(--gray-border); box-shadow: var(--shadow-sm); position: relative;">
+          <div style="color: #F39C12; font-size: 1.15rem; margin-bottom: 12px;">★★★★★</div>
+          <p style="font-size: 0.98rem; color: var(--gray-dark); margin-bottom: 20px; line-height: 1.6;">
             "Finally an authentic pizza place that cares about dough quality. Ordering was a breeze and the live tracker on the dashboard gave step-by-step updates!"
           </p>
-          <div style="font-weight: 700; color: var(--dark);">Rohan Verma</div>
-          <div style="font-size: 0.82rem; color: var(--text-muted);">Verified Foodie • Pune</div>
+          <div style="font-weight: 800; color: var(--dark); font-size: 1.05rem;">Rohan Verma</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Verified Foodie • Pune</div>
         </div>
 
-        <div style="background: var(--white); padding: 30px; border-radius: var(--radius-md); border: 1px solid var(--gray-border); box-shadow: var(--shadow-sm);">
-          <div style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 12px;">★★★★★</div>
-          <p style="font-size: 0.95rem; color: var(--gray-dark); margin-bottom: 18px;">
+        <div style="background: var(--white); padding: 32px; border-radius: var(--radius-lg); border: 1.5px solid var(--gray-border); box-shadow: var(--shadow-sm); position: relative;">
+          <div style="color: #F39C12; font-size: 1.15rem; margin-bottom: 12px;">★★★★★</div>
+          <p style="font-size: 0.98rem; color: var(--gray-dark); margin-bottom: 20px; line-height: 1.6;">
             "Loved the interactive community stories! I even shared my own family pizza recipe on the Create Blog page. Outstanding concept and mouthwatering food."
           </p>
-          <div style="font-weight: 700; color: var(--dark);">Priya Sengupta</div>
-          <div style="font-size: 0.82rem; color: var(--text-muted);">Food Blogger • Bangalore</div>
+          <div style="font-weight: 800; color: var(--dark); font-size: 1.05rem;">Priya Sengupta</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Food Blogger • Bangalore</div>
         </div>
       </div>
     </div>
@@ -240,7 +255,12 @@
   <aside class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
       <h3><span>🛒</span> Your Pizza Cart</h3>
-      <button class="close-drawer-btn" id="closeCartBtn">&times;</button>
+      <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
+    </div>
+
+    <!-- Free Delivery Progress Meter -->
+    <div class="free-delivery-tracker" id="freeDeliveryTracker">
+      <!-- Injected via app.js -->
     </div>
 
     <div class="cart-body" id="cartDrawerItems">
@@ -248,8 +268,15 @@
     </div>
 
     <div class="cart-footer">
+      <!-- Quick Coupon Chips -->
+      <div class="coupon-chips-row">
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">Coupons:</span>
+        <button class="coupon-chip" onclick="applyPromoCode('PIZZA20')">🏷️ PIZZA20 (-20%)</button>
+        <button class="coupon-chip" onclick="applyPromoCode('FREESHIP')">🚚 FREESHIP</button>
+      </div>
+
       <div style="margin-bottom: 14px; display: flex; gap: 8px;">
-        <input type="text" id="promoInput" placeholder="Enter coupon (e.g. PIZZA20)" class="form-control" style="padding: 8px 12px; font-size: 0.88rem; text-transform: uppercase;">
+        <input type="text" id="promoInput" placeholder="Enter coupon code" class="form-control" style="padding: 9px 14px; font-size: 0.88rem; text-transform: uppercase;">
         <button class="btn btn-outline btn-sm" onclick="applyPromoCode(document.getElementById('promoInput').value)">Apply</button>
       </div>
 
@@ -257,7 +284,7 @@
         <span>Subtotal</span>
         <span id="cartSubtotal">₹0.00</span>
       </div>
-      <div class="cart-summary-row" id="cartDiscountRow" style="display: none; color: var(--accent);">
+      <div class="cart-summary-row" id="cartDiscountRow" style="display: none; color: var(--accent); font-weight: 700;">
         <span>Discount (20% OFF)</span>
         <span id="cartDiscount">-₹0.00</span>
       </div>
@@ -275,9 +302,15 @@
         <span id="cartTotal">₹0.00</span>
       </div>
 
-      <button class="btn btn-primary checkout-btn" onclick="proceedToCheckout()">
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">
         Proceed to Checkout ➔
       </button>
+
+      <div style="text-align: center; margin-top: 10px;">
+        <button onclick="clearCart()" style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">
+          Clear Cart
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -293,7 +326,7 @@
           <p>
             Handcrafted artisanal pizzas baked in 450°C wood-fired stone ovens and delivered piping hot. Taste the passion in every slice.
           </p>
-          <div style="display: flex; gap: 12px; font-size: 1.2rem;">
+          <div style="display: flex; gap: 14px; font-size: 1.3rem;">
             <span>📷</span> <span>📘</span> <span>🐦</span> <span>▶️</span>
           </div>
         </div>
@@ -315,16 +348,15 @@
             <li><a href="dashboard.html">Live Order Tracking</a></li>
             <li><a href="login.html">My Account</a></li>
             <li><a href="register.html">Join Pizza Rewards</a></li>
-            <li><a href="#privacy">Privacy & Terms</a></li>
-            <li><a href="#faq">Delivery FAQ</a></li>
+            <li><a href="menu.html">Chef Specials</a></li>
           </ul>
         </div>
 
         <div>
           <h4 class="footer-title">Opening Hours</h4>
-          <p style="font-size: 0.9rem; margin-bottom: 8px;">Monday – Sunday: 11:00 AM – 01:00 AM</p>
-          <p style="font-size: 0.88rem; color: var(--gray-medium);">Hotline: +91 (22) 8000-PIZZA</p>
-          <div style="margin-top: 14px; background: rgba(255,255,255,0.06); padding: 12px; border-radius: var(--radius-sm); font-size: 0.82rem;">
+          <p style="font-size: 0.92rem; margin-bottom: 8px;">Monday – Sunday: 11:00 AM – 01:00 AM</p>
+          <p style="font-size: 0.88rem; color: #9CA3AF;">Hotline: +91 (22) 8000-PIZZA</p>
+          <div style="margin-top: 14px; background: rgba(255,255,255,0.06); padding: 12px; border-radius: var(--radius-sm); font-size: 0.85rem;">
             📍 Kitchen: 14 Artisanal Way, Food Boulevard
           </div>
         </div>
@@ -343,7 +375,6 @@
   <script src="js/menu.js"></script>
   <script src="js/blog.js"></script>
   <script>
-    // Render first 4 top-selling pizzas on homepage
     document.addEventListener('DOMContentLoaded', () => {
       renderPizzas('featuredPizzasGrid', 4);
     });

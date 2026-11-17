@@ -10,6 +10,15 @@
 </head>
 <body>
 
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container announcement-inner">
+      <span>🔥 <strong>JOIN PIZZACRAFT CLUB:</strong> Get <strong>20% OFF</strong> your order with code</span>
+      <span class="announcement-code" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply PIZZA20">PIZZA20</span>
+      <span class="announcement-tag">🛵 30-Min Delivery</span>
+    </div>
+  </div>
+
   <!-- Sticky Navbar -->
   <header class="site-header">
     <div class="container navbar">
@@ -29,6 +38,7 @@
       <div class="nav-actions">
         <button class="cart-btn" id="openCartBtn" aria-label="View Cart">
           <span>🛒</span>
+          <span style="font-size: 0.9rem;">Cart</span>
           <span class="cart-count">0</span>
         </button>
 
@@ -50,10 +60,10 @@
         <div class="auth-header">
           <span class="logo-icon">🍕</span>
           <h1 class="auth-title">Welcome Back</h1>
-          <p class="auth-subtitle">Sign in to track orders, save favorites, and earn slices.</p>
+          <p class="auth-subtitle">Sign in to track orders, save favorites, and earn loyalty slices.</p>
         </div>
 
-        <div id="authError" style="color: var(--primary); font-size: 0.88rem; font-weight: 600; margin-bottom: 16px; text-align: center;"></div>
+        <div id="authError" style="color: var(--primary); font-size: 0.88rem; font-weight: 700; margin-bottom: 16px; text-align: center;"></div>
 
         <form id="loginForm" onsubmit="handleLogin(event)">
           <div class="form-group">
@@ -64,23 +74,32 @@
           <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <label for="loginPassword" class="form-label" style="margin-bottom: 0;">Password</label>
-              <a href="#" style="font-size: 0.8rem; color: var(--primary);" onclick="showToast('Password reset link sent to registered email demo.', 'info')">Forgot?</a>
+              <a href="#" style="font-size: 0.82rem; color: var(--primary); font-weight: 600;" onclick="showToast('Password reset link sent to demo email.', 'info')">Forgot password?</a>
             </div>
-            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+            <div style="position: relative;">
+              <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 42px;">
+              <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; color: var(--gray-medium); cursor: pointer;" title="Show/Hide Password">
+                👁️
+              </button>
+            </div>
           </div>
 
-          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
-            Sign In to PizzaCraft
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 10px;">
+            Sign In to PizzaCraft ➔
           </button>
         </form>
 
         <!-- Fast Demo Account Pill -->
         <div class="demo-account-box">
           <div>
-            <strong>Demo User:</strong> john@example.com <br>
-            <span style="font-size: 0.78rem; color: var(--text-muted);">Pass: password123</span>
+            <strong style="color: var(--dark);">Tester Demo Account:</strong><br>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">john@example.com • pass: password123</span>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="fillDemoCredentials()">Auto Fill</button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-secondary btn-sm" onclick="instantDemoLogin()" title="Sign in immediately with demo account">
+              ⚡ 1-Click Login
+            </button>
+          </div>
         </div>
 
         <div class="auth-footer">
@@ -95,23 +114,26 @@
   <aside class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
       <h3><span>🛒</span> Your Pizza Cart</h3>
-      <button class="close-drawer-btn" id="closeCartBtn">&times;</button>
+      <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
     </div>
+    <div class="free-delivery-tracker" id="freeDeliveryTracker"></div>
     <div class="cart-body" id="cartDrawerItems"></div>
     <div class="cart-footer">
       <div class="cart-summary-total">
         <span>Total Amount</span>
         <span id="cartTotal">₹0.00</span>
       </div>
-      <button class="btn btn-primary checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">Proceed to Checkout</button>
     </div>
   </aside>
 
   <!-- Footer -->
   <footer class="site-footer">
-    <div class="container footer-bottom" style="border: none; padding-top: 0;">
-      <div>&copy; 2026 PizzaCraft. Secure Authenticated Checkout.</div>
-      <div><a href="index.html" style="color: var(--primary);">Return to Homepage</a></div>
+    <div class="container">
+      <div class="footer-bottom">
+        <div>&copy; 2026 PizzaCraft. All Rights Reserved.</div>
+        <div>Wood-Fired Neapolitan Sourdough</div>
+      </div>
     </div>
   </footer>
 

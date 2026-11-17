@@ -68,7 +68,7 @@ function handleRegister(e) {
     phone: phone || '+91 99999 88888',
     password,
     address: '12 Pepperoni Avenue, Gourmet City',
-    loyaltyPoints: 100, // Welcome bonus
+    loyaltyPoints: 120, // Welcome bonus
     joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
   };
 
@@ -77,11 +77,11 @@ function handleRegister(e) {
 
   // Automatically sign in
   localStorage.setItem('pizzacraft_current_user', JSON.stringify(newUser));
-  showToast('Account created successfully! Welcome to PizzaCraft.', 'success');
+  showToast('🎉 Account created successfully! Welcome to PizzaCraft Club.', 'success');
 
   setTimeout(() => {
     window.location.href = 'dashboard.html';
-  }, 1000);
+  }, 900);
 }
 
 // Handle User Login
@@ -101,9 +101,8 @@ function handleLogin(e) {
     return;
   }
 
-  // Set session
   localStorage.setItem('pizzacraft_current_user', JSON.stringify(matchedUser));
-  showToast(`Welcome back, ${matchedUser.name}!`, 'success');
+  showToast(`Welcome back, ${matchedUser.name}! 🍕`, 'success');
 
   const urlParams = new URLSearchParams(window.location.search);
   const redirect = urlParams.get('redirect');
@@ -117,13 +116,33 @@ function handleLogin(e) {
   }, 900);
 }
 
-// Prefill Demo Account
+// Auto fill demo credentials
 function fillDemoCredentials() {
-  const emailInput = document.getElementById('loginEmail');
-  const passwordInput = document.getElementById('loginPassword');
-  if (emailInput && passwordInput) {
-    emailInput.value = 'john@example.com';
-    passwordInput.value = 'password123';
-    showToast('Demo credentials filled! Click "Sign In"', 'info');
+  const emailField = document.getElementById('loginEmail');
+  const passField = document.getElementById('loginPassword');
+  if (emailField && passField) {
+    emailField.value = 'john@example.com';
+    passField.value = 'password123';
+    showToast('Demo credentials filled! Click Sign In or instant login.', 'info');
+  }
+}
+
+// Instant demo login with one click
+function instantDemoLogin() {
+  fillDemoCredentials();
+  const fakeEvent = { preventDefault: () => {} };
+  handleLogin(fakeEvent);
+}
+
+// Toggle password visibility
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
   }
 }

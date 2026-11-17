@@ -3,12 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Blog Post | PizzaCraft</title>
+  <title>Share Your Pizza Story | PizzaCraft</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
+
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container announcement-inner">
+      <span>🔥 <strong>FOODIE COMMUNITY:</strong> Share your baking techniques & get <strong>20% OFF</strong> pizzas with code</span>
+      <span class="announcement-code" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply PIZZA20">PIZZA20</span>
+      <span class="announcement-tag">🚀 30-Min Delivery</span>
+    </div>
+  </div>
 
   <!-- Sticky Navbar -->
   <header class="site-header">
@@ -29,6 +38,7 @@
       <div class="nav-actions">
         <button class="cart-btn" id="openCartBtn" aria-label="View Cart">
           <span>🛒</span>
+          <span style="font-size: 0.9rem;">Cart</span>
           <span class="cart-count">0</span>
         </button>
 
@@ -50,9 +60,9 @@
         
         <div style="margin-bottom: 30px; text-align: center;">
           <span class="section-tag">Community Kitchen Stories</span>
-          <h1 style="font-size: 2.2rem; margin-top: 4px;">Write & Publish a Pizza Story</h1>
-          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px;">
-            Share your favorite homemade pizza hacks, dough hydration tips, or local pizzeria reviews with thousands of foodies!
+          <h1 style="font-size: 2.4rem; margin-top: 6px;">Write & Publish a Pizza Story</h1>
+          <p style="color: var(--text-muted); font-size: 0.98rem; margin-top: 6px; max-width: 580px; margin-left: auto; margin-right: auto;">
+            Share your homemade pizza hacks, dough hydration secrets, or local pizzeria reviews with thousands of foodies!
           </p>
         </div>
 
@@ -60,18 +70,18 @@
           
           <div class="form-group">
             <label for="blogTitle" class="form-label">Article Title *</label>
-            <input type="text" id="blogTitle" class="form-control" placeholder="e.g. The Ultimate Guide to Crispy Pan Crust at Home" required>
+            <input type="text" id="blogTitle" class="form-control" placeholder="e.g. The Ultimate Guide to 70% Hydration Sourdough Pizza" required>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="form-group">
               <label for="blogCategory" class="form-label">Category</label>
               <select id="blogCategory" class="form-control">
-                <option value="Baking Secrets">Baking Secrets</option>
-                <option value="Ingredient Spotlight">Ingredient Spotlight</option>
-                <option value="Culinary Craft">Culinary Craft</option>
-                <option value="Dough Science">Dough Science</option>
-                <option value="Pizza Reviews">Pizza Reviews</option>
+                <option value="Baking Secrets">🔥 Baking Secrets</option>
+                <option value="Ingredient Spotlight">🍅 Ingredient Spotlight</option>
+                <option value="Culinary Craft">🧀 Culinary Craft</option>
+                <option value="Dough Science">🌾 Dough Science</option>
+                <option value="Pizza Reviews">⭐ Pizza Reviews</option>
               </select>
             </div>
 
@@ -83,14 +93,27 @@
 
           <div class="form-group">
             <label for="blogImage" class="form-label">Cover Image URL (Optional)</label>
-            <input type="url" id="blogImage" class="form-control" placeholder="https://images.unsplash.com/... (Leave empty for default)">
-            <p class="form-helper">Paste an Unsplash or direct image URL. A live preview will show below.</p>
+            <input type="url" id="blogImage" class="form-control" placeholder="https://images.unsplash.com/... (or choose a quick preset below)">
+            
+            <!-- Quick Image Presets -->
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center;">
+              <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">Quick Presets:</span>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 3px 8px;" onclick="document.getElementById('blogImage').value='https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800'; updateLiveImagePreview('https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800')">
+                🍕 Wood-Fired Slice
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 3px 8px;" onclick="document.getElementById('blogImage').value='https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800'; updateLiveImagePreview('https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800')">
+                🍄 Truffle Mushroom
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 3px 8px;" onclick="document.getElementById('blogImage').value='https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800'; updateLiveImagePreview('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800')">
+                🍗 BBQ Supreme
+              </button>
+            </div>
           </div>
 
           <!-- Live Image Preview Box -->
           <div id="imagePreviewWrapper" style="display: none; margin-bottom: 20px;">
-            <label class="form-label">Image Preview</label>
-            <div style="width: 100%; height: 220px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--gray-border);">
+            <label class="form-label">Live Cover Preview</label>
+            <div style="width: 100%; height: 230px; border-radius: var(--radius-md); overflow: hidden; border: 1.5px solid var(--gray-border); box-shadow: var(--shadow-sm);">
               <img id="imagePreview" src="" alt="Live Preview" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
           </div>
@@ -124,45 +147,77 @@
   <aside class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
       <h3><span>🛒</span> Your Pizza Cart</h3>
-      <button class="close-drawer-btn" id="closeCartBtn">&times;</button>
+      <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
     </div>
+
+    <!-- Free Delivery Progress Meter -->
+    <div class="free-delivery-tracker" id="freeDeliveryTracker"></div>
+
     <div class="cart-body" id="cartDrawerItems"></div>
+
     <div class="cart-footer">
+      <div class="coupon-chips-row">
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">Coupons:</span>
+        <button class="coupon-chip" onclick="applyPromoCode('PIZZA20')">🏷️ PIZZA20 (-20%)</button>
+        <button class="coupon-chip" onclick="applyPromoCode('FREESHIP')">🚚 FREESHIP</button>
+      </div>
+
       <div class="cart-summary-total">
         <span>Total Amount</span>
         <span id="cartTotal">₹0.00</span>
       </div>
-      <button class="btn btn-primary checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">Proceed to Checkout</button>
     </div>
   </aside>
 
   <!-- Footer -->
   <footer class="site-footer">
-    <div class="container footer-bottom" style="border: none; padding-top: 0;">
-      <div>&copy; 2026 PizzaCraft. Community Culinary Journal.</div>
-      <div><a href="blog.html" style="color: var(--primary);">Browse All Stories</a></div>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="brand-logo">
+            <span class="logo-icon">🍕</span>
+            <div>Pizza<span>Craft</span></div>
+          </a>
+          <p>Handcrafted artisanal pizzas baked in 450°C wood-fired stone ovens and delivered piping hot.</p>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="menu.html">Full Menu</a></li>
+            <li><a href="blog.html">Pizza Stories</a></li>
+            <li><a href="create-blog.html">Create a Blog</a></li>
+            <li><a href="dashboard.html">Order Dashboard</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Community</h4>
+          <ul class="footer-links">
+            <li><a href="create-blog.html">Submit an Article</a></li>
+            <li><a href="register.html">Become a VIP Member</a></li>
+            <li><a href="menu.html">Chef Specials</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Kitchen Hotline</h4>
+          <p style="font-size: 0.92rem; margin-bottom: 8px;">Order assistance: +91 (22) 8000-PIZZA</p>
+          <p style="font-size: 0.88rem; color: #9CA3AF;">11:00 AM – 01:00 AM Daily</p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 PizzaCraft. All Rights Reserved.</div>
+        <div>Stories for Pizza Enthusiasts</div>
+      </div>
     </div>
   </footer>
 
   <script src="js/app.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/blog.js"></script>
-  <script>
-    function prefillSampleBlog() {
-      document.getElementById('blogTitle').value = 'Mastering 70% Hydration Sourdough: Crispier Neapolitan Crust at Home';
-      document.getElementById('blogCategory').value = 'Dough Science';
-      document.getElementById('blogAuthor').value = 'Alex Mercer';
-      document.getElementById('blogImage').value = 'https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?w=800';
-      document.getElementById('blogContent').value = 'When aiming for that blistered, cloud-like airy rim, hydration percentage is king. By shifting from standard 60% up to 70% water-to-flour ratio and performing stretch-and-folds every 30 minutes, gluten develops remarkable elasticity that traps carbon dioxide pockets during the rapid oven spring.';
-      
-      const img = document.getElementById('imagePreview');
-      const wrapper = document.getElementById('imagePreviewWrapper');
-      if (img && wrapper) {
-        img.src = document.getElementById('blogImage').value;
-        wrapper.style.display = 'block';
-      }
-      showToast('Sample pizza blog article loaded! Ready to publish.', 'info');
-    }
-  </script>
 </body>
 </html>

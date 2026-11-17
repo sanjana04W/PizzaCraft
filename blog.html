@@ -10,6 +10,15 @@
 </head>
 <body>
 
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container announcement-inner">
+      <span>🔥 <strong>CULINARY JOURNAL:</strong> Read chef recipes & get <strong>20% OFF</strong> pizzas with code</span>
+      <span class="announcement-code" onclick="applyPromoCode('PIZZA20'); openCartDrawer();" title="Click to apply PIZZA20">PIZZA20</span>
+      <span class="announcement-tag">🛵 30-Min Fast Delivery</span>
+    </div>
+  </div>
+
   <!-- Sticky Navbar -->
   <header class="site-header">
     <div class="container navbar">
@@ -29,6 +38,7 @@
       <div class="nav-actions">
         <button class="cart-btn" id="openCartBtn" aria-label="View Cart">
           <span>🛒</span>
+          <span style="font-size: 0.9rem;">Cart</span>
           <span class="cart-count">0</span>
         </button>
 
@@ -44,21 +54,43 @@
   </header>
 
   <!-- Page Hero Header -->
-  <section style="background: radial-gradient(circle at center, #FFEAEB 0%, #FBF9F5 100%); padding: 50px 0 35px; text-align: center;">
+  <section style="background: radial-gradient(circle at center, #FFEAEB 0%, #FAF7F2 100%); padding: 55px 0 35px; text-align: center;">
     <div class="container">
       <span class="section-tag">Kitchen Culture & Artisanal Secrets</span>
-      <h1 class="section-title" style="font-size: 2.8rem;">The PizzaCraft Journal</h1>
-      <p class="section-subtitle" style="max-width: 580px; margin: 0 auto 24px;">
-        Read about slow fermentation dough science, organic tomato harvests, chef profiles, and community favorite recipes.
+      <h1 class="section-title" style="font-size: 3rem;">The PizzaCraft Journal</h1>
+      <p class="section-subtitle" style="max-width: 600px; margin: 0 auto 24px;">
+        Read about slow fermentation dough science, volcanic San Marzano harvests, chef profiles, and community favorite recipes.
       </p>
-      <a href="create-blog.html" class="btn btn-primary btn-lg">
-        + Publish Your Pizza Story
-      </a>
+      
+      <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 24px;">
+        <a href="create-blog.html" class="btn btn-primary btn-lg">
+          + Share Your Pizza Story
+        </a>
+      </div>
+
+      <!-- Blog Category Filter Chips -->
+      <div class="menu-filter-bar" style="margin-bottom: 0;">
+        <button class="filter-btn blog-filter-btn active" data-category="all" onclick="filterBlogs('all')">
+          🌟 All Stories
+        </button>
+        <button class="filter-btn blog-filter-btn" data-category="Baking Secrets" onclick="filterBlogs('Baking Secrets')">
+          🔥 Baking Secrets
+        </button>
+        <button class="filter-btn blog-filter-btn" data-category="Ingredient Spotlight" onclick="filterBlogs('Ingredient Spotlight')">
+          🍅 Ingredients
+        </button>
+        <button class="filter-btn blog-filter-btn" data-category="Culinary Craft" onclick="filterBlogs('Culinary Craft')">
+          🧀 Cheese & Craft
+        </button>
+        <button class="filter-btn blog-filter-btn" data-category="Dough Science" onclick="filterBlogs('Dough Science')">
+          🌾 Dough Science
+        </button>
+      </div>
     </div>
   </section>
 
   <!-- Blog List Section -->
-  <section class="section">
+  <section class="section" style="padding-top: 35px; padding-bottom: 80px;">
     <div class="container">
       <div class="blog-grid" id="blogsContainer">
         <!-- Rendered by js/blog.js -->
@@ -71,15 +103,57 @@
   <aside class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
       <h3><span>🛒</span> Your Pizza Cart</h3>
-      <button class="close-drawer-btn" id="closeCartBtn">&times;</button>
+      <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
     </div>
+
+    <!-- Free Delivery Progress Meter -->
+    <div class="free-delivery-tracker" id="freeDeliveryTracker"></div>
+
     <div class="cart-body" id="cartDrawerItems"></div>
+
     <div class="cart-footer">
+      <div class="coupon-chips-row">
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">Coupons:</span>
+        <button class="coupon-chip" onclick="applyPromoCode('PIZZA20')">🏷️ PIZZA20 (-20%)</button>
+        <button class="coupon-chip" onclick="applyPromoCode('FREESHIP')">🚚 FREESHIP</button>
+      </div>
+
+      <div style="margin-bottom: 14px; display: flex; gap: 8px;">
+        <input type="text" id="promoInput" placeholder="Enter coupon code" class="form-control" style="padding: 9px 14px; font-size: 0.88rem; text-transform: uppercase;">
+        <button class="btn btn-outline btn-sm" onclick="applyPromoCode(document.getElementById('promoInput').value)">Apply</button>
+      </div>
+
+      <div class="cart-summary-row">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">₹0.00</span>
+      </div>
+      <div class="cart-summary-row" id="cartDiscountRow" style="display: none; color: var(--accent); font-weight: 700;">
+        <span>Discount (20% OFF)</span>
+        <span id="cartDiscount">-₹0.00</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Taxes & GST (5%)</span>
+        <span id="cartTax">₹0.00</span>
+      </div>
+      <div class="cart-summary-row">
+        <span>Delivery Fee</span>
+        <span id="cartDelivery">FREE</span>
+      </div>
+
       <div class="cart-summary-total">
         <span>Total Amount</span>
         <span id="cartTotal">₹0.00</span>
       </div>
-      <button class="btn btn-primary checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
+
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">
+        Proceed to Checkout ➔
+      </button>
+
+      <div style="text-align: center; margin-top: 10px;">
+        <button onclick="clearCart()" style="font-size: 0.78rem; color: var(--text-muted); text-decoration: underline; background: none; border: none; cursor: pointer;">
+          Clear Cart
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -119,8 +193,8 @@
 
         <div>
           <h4 class="footer-title">Opening Hours</h4>
-          <p style="font-size: 0.9rem; margin-bottom: 8px;">Monday – Sunday: 11:00 AM – 01:00 AM</p>
-          <p style="font-size: 0.88rem; color: var(--gray-medium);">Hotline: +91 (22) 8000-PIZZA</p>
+          <p style="font-size: 0.92rem; margin-bottom: 8px;">Monday – Sunday: 11:00 AM – 01:00 AM</p>
+          <p style="font-size: 0.88rem; color: #9CA3AF;">Hotline: +91 (22) 8000-PIZZA</p>
         </div>
       </div>
 
