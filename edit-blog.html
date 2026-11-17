@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Story | PizzaCraft</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    .edit-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #3B82F6, #6366F1);
+      color: #fff;
+      border-radius: 30px;
+      padding: 0.3rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .char-counter {
+      font-size: 0.78rem;
+      color: #aaa;
+      text-align: right;
+      margin-top: 4px;
+    }
+    .char-counter.warn { color: #F59E0B; }
+    .char-counter.over { color: #EF4444; }
+    .change-indicator {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: #F59E0B;
+      font-weight: 600;
+    }
+    .change-indicator.visible { display: flex; }
+    .diff-badge {
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 6px;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <div class="top-announcement-bar">
+    <div class="container announcement-inner">
+      <span>✏️ <strong>EDITING MODE:</strong> Update and save your pizza story</span>
+      <span class="announcement-tag">🍕 PizzaCraft Journal</span>
+      <span class="announcement-tag">📝 Auto-saves to server</span>
+    </div>
+  </div>
+
+  <!-- Sticky Navbar -->
+  <header class="site-header">
+    <div class="container navbar">
+      <a href="index.html" class="brand-logo">
+        <span class="logo-icon">🍕</span>
+        <div>Pizza<span>Craft</span></div>
+      </a>
+
+      <nav class="nav-links" id="navLinks">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="menu.html" class="nav-link">Menu &amp; Order</a>
+        <a href="blog.html" class="nav-link active">Pizza Stories</a>
+        <a href="create-blog.html" class="nav-link">Create Blog</a>
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="cart-btn" id="openCartBtn" aria-label="View Cart">
+          <span>🛒</span>
+          <span style="font-size: 0.9rem;">Cart</span>
+          <span class="cart-count">0</span>
+        </button>
+        <div id="userNavActions" style="display: flex; align-items: center; gap: 10px;"></div>
+        <button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Toggle Navigation">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Edit Blog Form Section -->
+  <main class="section" style="padding-top: 40px; padding-bottom: 80px;">
+    <div class="container">
+      <div class="create-blog-container">
+
+        <!-- Header -->
+        <div style="margin-bottom: 30px; text-align: center;">
+          <div class="edit-badge">✏️ Edit Mode</div>
+          <h1 id="editPageTitle" style="font-size: 2rem; margin-top: 8px; color: #1a1a1a;">Loading story...</h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px;">
+            Make your changes below and click <strong>Save Changes</strong> to update your pizza story.
+          </p>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;">
+            <div class="change-indicator" id="changeIndicator">
+              <span>⚠️</span>
+              <span>Unsaved changes</span>
+              <span class="diff-badge" id="changedFieldsCount">0 fields</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breadcrumb -->
+        <div style="margin-bottom:20px;">
+          <a href="blog.html" style="color:#FF3838;font-size:0.9rem;text-decoration:none;font-weight:600;">
+            ← Back to All Stories
+          </a>
+        </div>
+
+        <form id="editBlogForm">
+
+          <!-- Title -->
+          <div class="form-group">
+            <label for="blogTitle" class="form-label">Article Title *</label>
+            <input type="text" id="blogTitle" class="form-control"
+              placeholder="e.g. The Ultimate Guide to 70% Hydration Sourdough Pizza"
+              maxlength="150" required>
+            <div class="char-counter" id="titleCounter">0 / 150</div>
+          </div>
+
+          <!-- Category + Author row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group">
+              <label for="blogCategory" class="form-label">Category</label>
+              <select id="blogCategory" class="form-control">
+                <option value="Baking Secrets">🔥 Baking Secrets</option>
+                <option value="Italian Heritage">🇮🇹 Italian Heritage</option>
+                <option value="Chef Tips">👨‍🍳 Chef Tips</option>
+                <option value="Ingredients">🍅 Ingredients</option>
+                <option value="Health &amp; Nutrition">🥗 Health &amp; Nutrition</option>
+                <option value="World Flavors">🌍 World Flavors</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="blogAuthor" class="form-label">Author Name *</label>
+              <input type="text" id="blogAuthor" class="form-control"
+                placeholder="e.g. Chef Maria or John Doe" required>
+            </div>
+          </div>
+
+          <!-- Cover Image -->
+          <div class="form-group">
+            <label for="blogImage" class="form-label">Cover Image URL</label>
+            <input type="url" id="blogImage" class="form-control"
+              placeholder="https://images.unsplash.com/...">
+
+            <!-- Quick presets -->
+            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center;">
+              <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700;">Quick Presets:</span>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem;padding:3px 10px"
+                onclick="document.getElementById('blogImage').value='https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&auto=format&fit=crop&q=80'; updateLiveImagePreview(document.getElementById('blogImage').value)">
+                🍕 Pizza Dough
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem;padding:3px 10px"
+                onclick="document.getElementById('blogImage').value='https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&auto=format&fit=crop&q=80'; updateLiveImagePreview(document.getElementById('blogImage').value)">
+                🧀 Margherita
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem;padding:3px 10px"
+                onclick="document.getElementById('blogImage').value='https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800&auto=format&fit=crop&q=80'; updateLiveImagePreview(document.getElementById('blogImage').value)">
+                🍅 Tomatoes
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="font-size:0.75rem;padding:3px 10px"
+                onclick="document.getElementById('blogImage').value='https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=800&auto=format&fit=crop&q=80'; updateLiveImagePreview(document.getElementById('blogImage').value)">
+                🧀 Mozzarella
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Image Preview -->
+          <div id="imagePreviewWrapper" style="display: none; margin-bottom: 20px;">
+            <label class="form-label">Cover Preview</label>
+            <div style="width: 100%; height: 220px; border-radius: var(--radius-md); overflow: hidden; border: 1.5px solid var(--gray-border); box-shadow: var(--shadow-sm);">
+              <img id="imagePreview" src="" alt="Cover Preview" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+          </div>
+
+          <!-- Content -->
+          <div class="form-group">
+            <label for="blogContent" class="form-label">Story Content *</label>
+            <textarea id="blogContent" class="form-control" rows="10"
+              placeholder="Write your pizza story, tips, or recipe here... Use double line breaks for new paragraphs."
+              required style="resize: vertical;"></textarea>
+            <div class="char-counter" id="contentCounter">0 characters</div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; flex-wrap: wrap; gap: 14px;">
+            <div style="display:flex;gap:10px;">
+              <a href="blog.html" class="btn btn-outline">← Cancel</a>
+              <button type="button" class="btn btn-outline btn-sm"
+                style="color:#EF4444;border-color:#EF4444;"
+                onclick="confirmDiscardChanges()">
+                🗑️ Discard
+              </button>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="saveBtn">
+              💾 Save Changes
+            </button>
+          </div>
+
+        </form>
+
+        <!-- Updated info box -->
+        <div id="savedBanner" style="
+          display:none;
+          margin-top:1.5rem;
+          padding:1rem 1.4rem;
+          background:linear-gradient(135deg,#ECFDF5,#D1FAE5);
+          border:1.5px solid #6EE7B7;
+          border-radius:12px;
+          color:#065F46;
+          font-weight:600;
+          text-align:center;
+        ">
+          ✅ Story updated and saved to database!
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Cart Drawer (minimal) -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3><span>🛒</span> Your Pizza Cart</h3>
+      <button class="close-drawer-btn" id="closeCartBtn" aria-label="Close Cart">&times;</button>
+    </div>
+    <div class="free-delivery-tracker" id="freeDeliveryTracker"></div>
+    <div class="cart-body" id="cartDrawerItems"></div>
+    <div class="cart-footer">
+      <div class="cart-summary-total"><span>Total</span><span id="cartTotal">₹0.00</span></div>
+      <button class="btn btn-primary checkout-btn btn-lg" onclick="proceedToCheckout()">Checkout →</button>
+    </div>
+  </aside>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="brand-logo">
+            <span class="logo-icon">🍕</span>
+            <div>Pizza<span>Craft</span></div>
+          </a>
+          <p>Handcrafted artisanal pizzas baked in 450°C wood-fired stone ovens.</p>
+        </div>
+        <div>
+          <h4 class="footer-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="blog.html">Pizza Stories</a></li>
+            <li><a href="create-blog.html">Create a Blog</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 PizzaCraft. All Rights Reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/blog.js"></script>
+
+  <script>
+  // ── Edit page enhancements (char counters, unsaved-changes indicator) ─────────
+  document.addEventListener('DOMContentLoaded', () => {
+    const fields = ['blogTitle', 'blogCategory', 'blogAuthor', 'blogImage', 'blogContent'];
+    let originalValues = {};
+    let valuesLoaded = false;
+
+    // Snapshot original values after blog is loaded (wait 2s for async fetch)
+    setTimeout(() => {
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) originalValues[id] = el.value;
+      });
+      valuesLoaded = true;
+    }, 2000);
+
+    function updateChangeIndicator() {
+      if (!valuesLoaded) return;
+      const changed = fields.filter(id => {
+        const el = document.getElementById(id);
+        return el && el.value !== originalValues[id];
+      });
+      const indicator = document.getElementById('changeIndicator');
+      const countEl = document.getElementById('changedFieldsCount');
+      if (indicator) indicator.classList.toggle('visible', changed.length > 0);
+      if (countEl) countEl.textContent = `${changed.length} field${changed.length !== 1 ? 's' : ''}`;
+    }
+
+    // Title char counter
+    const titleInput = document.getElementById('blogTitle');
+    const titleCounter = document.getElementById('titleCounter');
+    if (titleInput && titleCounter) {
+      titleInput.addEventListener('input', () => {
+        const len = titleInput.value.length;
+        titleCounter.textContent = `${len} / 150`;
+        titleCounter.className = 'char-counter' + (len > 130 ? (len > 150 ? ' over' : ' warn') : '');
+        updateChangeIndicator();
+      });
+    }
+
+    // Content char counter
+    const contentInput = document.getElementById('blogContent');
+    const contentCounter = document.getElementById('contentCounter');
+    if (contentInput && contentCounter) {
+      contentInput.addEventListener('input', () => {
+        const len = contentInput.value.length;
+        contentCounter.textContent = `${len.toLocaleString()} character${len !== 1 ? 's' : ''}`;
+        updateChangeIndicator();
+      });
+    }
+
+    // Other fields
+    ['blogCategory', 'blogAuthor', 'blogImage'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', updateChangeIndicator);
+      if (el && el.tagName === 'SELECT') el.addEventListener('change', updateChangeIndicator);
+    });
+
+    // Warn before leaving with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      const changed = fields.some(id => {
+        const el = document.getElementById(id);
+        return el && valuesLoaded && el.value !== originalValues[id];
+      });
+      if (changed) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  });
+
+  function confirmDiscardChanges() {
+    if (confirm('Discard all unsaved changes and return to blog list?')) {
+      window.onbeforeunload = null;
+      window.location.href = 'blog.html';
+    }
+  }
+  </script>
+
+</body>
+</html>

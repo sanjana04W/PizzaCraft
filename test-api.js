@@ -123,17 +123,56 @@ async function runTests() {
   const notFoundRes = await request('GET', '/api/blogs/nonexistent-id-xyz');
   assert(notFoundRes.status === 404 && notFoundRes.body.success === false, 'GET /api/blogs/:id → 404 for missing blog');
 
-  // ── 11. Blog Validation ───────────────────────────────────────────────────
+  // ── 11. Update Blog (PUT) ─────────────────────────────────────────────────
+  const updateRes = await request('PUT', `/api/blogs/${createdBlogId}`, {
+    title: 'Updated: San Marzano Deep Dive',
+    category: 'Ingredients',
+    author: 'Test Chef (Updated)',
+    content: 'An updated and expanded look at San Marzano tomatoes — now with more volcanic soil science, harvest season insights, and tasting notes comparing DOP-certified to generic supermarket cans. The difference in sweetness and acidity is remarkable and undeniable.',
+    image: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800'
+  });
+  assert(updateRes.status === 200 && updateRes.body.success === true, 'PUT /api/blogs/:id → updates blog');
+  assert(updateRes.body.blog?.title === 'Updated: San Marzano Deep Dive', 'PUT /api/blogs/:id → returns updated title');
+
+  // ── 12. Verify Update Persisted ───────────────────────────────────────────
+  const verifyUpdate = await request('GET', `/api/blogs/${createdBlogId}`);
+  assert(verifyUpdate.body.blog?.title === 'Updated: San Marzano Deep Dive', 'GET /api/blogs/:id → update persisted correctly');
+
+  // ── 13. Update Validation ─────────────────────────────────────────────────
+  const badUpdate = await request('PUT', `/api/blogs/${createdBlogId}`, {
+    title: '', author: 'Test', content: 'Valid content here'
+  });
+  assert(badUpdate.status === 400 && badUpdate.body.success === false, 'PUT /api/blogs/:id → 400 on empty title');
+
+  // ── 14. Delete Blog (DELETE) ──────────────────────────────────────────────
+  const deleteRes = await request('DELETE', `/api/blogs/${createdBlogId}`);
+  assert(deleteRes.status === 200 && deleteRes.body.success === true, 'DELETE /api/blogs/:id → deletes blog');
+
+  // ── 15. Verify Deletion ───────────────────────────────────────────────────
+  const afterDelete = await request('GET', `/api/blogs/${createdBlogId}`);
+  assert(afterDelete.status === 404, 'GET /api/blogs/:id → 404 after deletion');
+
+  // ── 16. Blog Validation ───────────────────────────────────────────────────
   const failBlog = await request('POST', '/api/blogs', {
     title: '', category: 'Baking Secrets', author: 'Chef', content: 'Short'
   });
   assert(failBlog.status === 400 && failBlog.body.success === false, 'POST /api/blogs → 400 on empty title');
 
-  // ── 12. Like Blog ─────────────────────────────────────────────────────────
-  const likeRes = await request('POST', `/api/blogs/${createdBlogId}/like`, { action: 'like' });
+  // ── 17. Search Blogs ──────────────────────────────────────────────────────
+  const searchRes = await request('GET', '/api/blogs?search=mozzarella');
+  assert(searchRes.status === 200 && Array.isArray(searchRes.body.blogs), 'GET /api/blogs?search= → returns filtered results');
+
+  // ── 18. Category Filter ───────────────────────────────────────────────────
+  const catRes = await request('GET', '/api/blogs?category=Baking+Secrets');
+  assert(catRes.status === 200 && Array.isArray(catRes.body.blogs), 'GET /api/blogs?category= → category filter works');
+
+  // ── 19. Like Blog ─────────────────────────────────────────────────────────
+  const blogsAgain = await request('GET', '/api/blogs');
+  const anyBlogId = blogsAgain.body.blogs?.[0]?.id || blogsAgain.body.blogs?.[0]?._id;
+  const likeRes = await request('POST', `/api/blogs/${anyBlogId}/like`, { action: 'like' });
   assert(likeRes.status === 200 && typeof likeRes.body.likes === 'number', 'POST /api/blogs/:id/like → increments likes');
 
-  // ── 13. Place Order ───────────────────────────────────────────────────────
+  // ── 20. Place Order ───────────────────────────────────────────────────────
   const orderRes = await request('POST', '/api/orders', {
     items: [{ id: 'piz-1', name: 'Margherita Classica', price: 349, quantity: 2 }],
     subtotal: 698, tax: 35, deliveryFee: 49, discount: 0, total: 782,
@@ -141,12 +180,12 @@ async function runTests() {
   });
   assert(orderRes.status === 201 && orderRes.body.success === true, 'POST /api/orders → places pizza order');
 
-  // ── 14. Advance Order Status ──────────────────────────────────────────────
+  // ── 21. Advance Order Status ──────────────────────────────────────────────
   const orderId = orderRes.body.order.id || orderRes.body.order._id;
   const advanceRes = await request('PATCH', `/api/orders/${orderId}/status`);
   assert(advanceRes.status === 200 && advanceRes.body.order, 'PATCH /api/orders/:id/status → advances status');
 
-  // ── 15. API 404 ───────────────────────────────────────────────────────────
+  // ── 22. API 404 ───────────────────────────────────────────────────────────
   const notFound = await request('GET', '/api/nonexistent');
   assert(notFound.status === 404 && notFound.body.success === false, 'GET /api/nonexistent → 404 not found');
 

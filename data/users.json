@@ -28,5 +28,15 @@
     "address": "99 Olive Lane, Gourmet City",
     "loyaltyPoints": 120,
     "joinedDate": "Nov 2026"
+  },
+  {
+    "id": "usr_1794926494302",
+    "name": "Test Chef",
+    "email": "testchef_1794926493873@example.com",
+    "password": "$2b$12$wzDi86OvnsuWsv0NgPl9..ppdakcZ3hKHWp/TlNmQLN.9l.MYvhe6",
+    "phone": "+91 91234 56789",
+    "address": "99 Olive Lane, Gourmet City",
+    "loyaltyPoints": 120,
+    "joinedDate": "Nov 2026"
   }
 ]

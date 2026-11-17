@@ -522,6 +522,32 @@
           </div>
         </div>
 
+        <!-- Edit / Delete Actions -->
+        <div id="blogCrudActions" style="
+          display:flex;gap:10px;flex-wrap:wrap;margin:1.5rem 0;
+          padding:1.2rem 1.4rem;
+          background:#F9FAFB;
+          border:1.5px solid #e5e7eb;
+          border-radius:14px;
+          align-items:center;
+        ">
+          <span style="font-size:0.88rem;color:#888;font-weight:600;">Manage this story:</span>
+          <a id="editBlogLink" href="#" class="blog-action-btn blog-action-edit" style="
+            padding:0.45rem 1rem;border-radius:20px;border:1.5px solid #3B82F6;
+            color:#3B82F6;font-size:0.85rem;font-weight:700;text-decoration:none;transition:all 0.2s;
+          " onmouseover="this.style.background='#3B82F6';this.style.color='#fff'"
+             onmouseout="this.style.background='transparent';this.style.color='#3B82F6'">
+            ✏️ Edit Story
+          </a>
+          <button id="deleteBlogBtn" onclick="handleDetailDelete()" style="
+            padding:0.45rem 1rem;border-radius:20px;border:1.5px solid #EF4444;
+            color:#EF4444;font-size:0.85rem;font-weight:700;cursor:pointer;background:transparent;transition:all 0.2s;font-family:inherit;
+          " onmouseover="this.style.background='#EF4444';this.style.color='#fff'"
+             onmouseout="this.style.background='transparent';this.style.color='#EF4444'">
+            🗑️ Delete Story
+          </button>
+        </div>
+
         <!-- CTA Section -->
         <div class="blog-detail-cta">
           <h3>🍕 Ready to Taste the Craft?</h3>
@@ -534,6 +560,38 @@
         </div>
 
       </div>`;
+
+    // ── Update Edit link & wire delete ───────────────────────────────────────
+    const editLink = document.getElementById('editBlogLink');
+    if (editLink) editLink.href = `edit-blog.html?id=${encodeURIComponent(blog.id || blog._id)}`;
+
+    window.handleDetailDelete = async function() {
+      const title = blog.title || 'this story';
+      if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+
+      const currentId = blog.id || blog._id;
+      let deleted = false;
+
+      if (window.PizzaCraftAPI) {
+        const res = await window.PizzaCraftAPI.deleteBlog(currentId);
+        if (res.ok && res.data?.success) {
+          deleted = true;
+        } else if (!res.networkError) {
+          showToast(res.data?.message || 'Could not delete story.', 'error');
+          return;
+        }
+      }
+
+      // Local fallback
+      try {
+        const local = JSON.parse(localStorage.getItem('pizzacraft_blogs') || '[]');
+        const filtered = local.filter(b => b.id !== currentId && b._id !== currentId);
+        localStorage.setItem('pizzacraft_blogs', JSON.stringify(filtered));
+      } catch(e) {}
+
+      showToast('🗑️ Story deleted.', 'success');
+      setTimeout(() => window.location.href = 'blog.html', 1000);
+    };
 
     // ── Scroll-to-top button ──────────────────────────────────────────────────
     window.addEventListener('scroll', () => {

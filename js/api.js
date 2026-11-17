@@ -83,6 +83,20 @@ const API = {
     }
   },
 
+  // Search Blogs: GET /api/blogs?search=&category=
+  async searchBlogs(search = '', category = 'all') {
+    try {
+      const params = new URLSearchParams();
+      if (search && search.trim()) params.set('search', search.trim());
+      if (category && category !== 'all') params.set('category', category);
+      const response = await fetch(`${API_BASE}/api/blogs?${params.toString()}`);
+      const data = await response.json();
+      return { ok: response.ok, data };
+    } catch (err) {
+      return { ok: false, networkError: true };
+    }
+  },
+
   // Get Single Blog: GET /api/blogs/:id
   async getBlog(id) {
     try {
@@ -107,6 +121,36 @@ const API = {
       return { ok: response.ok, data };
     } catch (err) {
       return { ok: false, networkError: true };
+    }
+  },
+
+  // Update Blog: PUT /api/blogs/:id
+  async updateBlog(id, blogData) {
+    try {
+      const response = await fetch(`${API_BASE}/api/blogs/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(blogData)
+      });
+      const data = await response.json();
+      return { ok: response.ok, status: response.status, data };
+    } catch (err) {
+      console.warn('Backend unavailable for updateBlog:', err);
+      return { ok: false, networkError: true, error: err.message };
+    }
+  },
+
+  // Delete Blog: DELETE /api/blogs/:id
+  async deleteBlog(id) {
+    try {
+      const response = await fetch(`${API_BASE}/api/blogs/${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      return { ok: response.ok, status: response.status, data };
+    } catch (err) {
+      console.warn('Backend unavailable for deleteBlog:', err);
+      return { ok: false, networkError: true, error: err.message };
     }
   },
 
