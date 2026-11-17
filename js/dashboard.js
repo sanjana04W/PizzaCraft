@@ -92,8 +92,18 @@ function seedSampleOrder() {
   initDashboard();
 }
 
-function renderDashboardOrders() {
-  const orders = JSON.parse(localStorage.getItem('pizzacraft_orders') || '[]');
+async function renderDashboardOrders() {
+  const user = JSON.parse(localStorage.getItem('pizzacraft_current_user') || 'null');
+  let orders = JSON.parse(localStorage.getItem('pizzacraft_orders') || '[]');
+
+  // Fetch from backend API if available
+  if (window.PizzaCraftAPI && user) {
+    const res = await window.PizzaCraftAPI.getOrders(user.email);
+    if (res.ok && res.data && res.data.orders) {
+      orders = res.data.orders;
+      localStorage.setItem('pizzacraft_orders', JSON.stringify(orders));
+    }
+  }
   const activeOrderContainer = document.getElementById('activeOrderSection');
   const orderHistoryContainer = document.getElementById('ordersHistoryTable');
   const statOrdersCount = document.getElementById('statTotalOrders');
@@ -228,7 +238,7 @@ function reorderItems(orderId) {
 }
 
 // Advance order stage simulation
-function advanceOrderStatus(orderId) {
+async function advanceOrderStatus(orderId) {
   const orders = JSON.parse(localStorage.getItem('pizzacraft_orders') || '[]');
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
@@ -241,6 +251,11 @@ function advanceOrderStatus(orderId) {
     order.status = 'Delivered';
     order.estimatedMinutes = 0;
     showToast(`Order #${orderId} has been successfully delivered! Buon Appetito! 🍕✨`, 'success');
+  }
+
+  // Sync with backend API
+  if (window.PizzaCraftAPI) {
+    await window.PizzaCraftAPI.advanceOrderStatus(orderId);
   }
 
   localStorage.setItem('pizzacraft_orders', JSON.stringify(orders));

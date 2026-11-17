@@ -1,0 +1,51 @@
+[
+  {
+    "id": "ORD-679814",
+    "items": [
+      {
+        "id": "piz-1",
+        "name": "Margherita Classica",
+        "price": 349,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 349,
+    "tax": 17,
+    "deliveryFee": 49,
+    "discount": 0,
+    "total": 415,
+    "status": "Out for Delivery",
+    "date": "Nov 17, 2026, 07:06 PM",
+    "userEmail": "chef_1794922569726@example.com",
+    "estimatedMinutes": 12,
+    "createdAt": "2026-11-17T13:36:09.747Z"
+  },
+  {
+    "id": "ORD-784920",
+    "items": [
+      {
+        "id": "piz-1",
+        "name": "Margherita Classica",
+        "price": 349,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=300"
+      },
+      {
+        "id": "piz-9",
+        "name": "Artisan Garlic Dough Knots",
+        "price": 199,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?w=300"
+      }
+    ],
+    "subtotal": 548,
+    "tax": 27,
+    "deliveryFee": 0,
+    "discount": 0,
+    "total": 575,
+    "status": "Baking",
+    "date": "Feb 17, 2026, 06:30 PM",
+    "userEmail": "john@example.com",
+    "estimatedMinutes": 22
+  }
+]

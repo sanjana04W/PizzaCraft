@@ -1,73 +1,67 @@
 # 🍕 PizzaCraft - Artisanal Wood-Fired Pizza Delivery & Culinary Blog
 
-PizzaCraft is a modern, vibrant, and ultra user-friendly web application for gourmet wood-fired pizza ordering, live order tracking, and culinary community stories.
+PizzaCraft is a full-stack, vibrant, and ultra user-friendly web application for gourmet wood-fired pizza ordering, live order tracking, and culinary community stories. Built with **HTML5, CSS3, JavaScript, Node.js, and Express.js**.
 
 ---
 
-## 🎨 What Makes It Colorful & Visually Engaging?
-- **Vibrant Gourmet Theme:** Warm Italian sunset gradients (`#FF3838`, `#FF6B81`, `#FFA502`), melted golden cheddar accents, fresh herb greens (`#10AC84`), and rich berry chocolate tones.
-- **Dynamic Background Orbs:** Soft ambient mesh radial gradients delivering a warm, appetizing restaurant ambience.
-- **Top Announcement Bar:** Pulsing gradient ticker highlighting exclusive promos (`PIZZA20`) and free delivery milestones.
-- **Eye-Catching Badges:** Category pills with custom palettes (🌱 Pure Veg in emerald, 🍗 Gourmet Meat in ruby, 👨‍🍳 Chef's Special in saffron, 🍫 Sweet Treat in berry purple).
-- **Smooth Micro-Interactions:** 3D hover elevations, button shine effects, and springy animated badge counters.
+## 🛠️ Backend Architecture (Node.js & Express.js)
+
+The backend server is powered by **Node.js** and **Express.js**, serving both modular REST APIs and the static frontend client with persistent JSON file storage.
+
+### 📌 Key REST API Endpoints
+
+| Method | Endpoint | Description | Request Body / Query |
+|---|---|---|---|
+| `GET` | `/api/health` | Service health status | None |
+| `POST` | `/api/auth/register` | **User Registration** with validation | `{ name, email, password, phone, address }` |
+| `POST` | `/api/auth/login` | **User Login** with credential checks | `{ email, password }` |
+| `GET` | `/api/auth/users` | List registered users (sanitized) | None |
+| `GET` | `/api/blogs` | Get all pizza stories | `?category=...` & `?search=...` |
+| `POST` | `/api/blogs` | **Create & Publish Blog** | `{ title, category, author, content, image }` |
+| `POST` | `/api/blogs/:id/like` | Increment or decrement story likes | `{ action: "like" \| "unlike" }` |
+| `GET` | `/api/orders` | Retrieve order list | `?email=...` |
+| `POST` | `/api/orders` | Place a new pizza order | `{ items, subtotal, tax, deliveryFee, total, userEmail }` |
+| `PATCH` | `/api/orders/:id/status` | Advance live delivery status | None |
 
 ---
 
-## 🚀 Ultra User-Friendly Features
-1. **Interactive Pizza Customizer Modal:**
-   - Click any pizza card or "Customize" to personalize:
-     - **Size:** Regular (8"), Medium (10" +₹149), Large (12" +₹279).
-     - **Crust:** Classic Sourdough, Thin & Crispy, Stuffed Cheese Burst (+₹75).
-     - **Add-ons:** Extra Buffalo Mozzarella, Fire Jalapenos, Roasted Garlic, White Truffle Glaze.
-   - Dynamic real-time price calculation!
-2. **In-Card Quantity Controllers:**
-   - When an item is added to cart, the button on the menu card immediately transforms into an intuitive `[-] [qty] [+]` controller.
-3. **Smart Menu Search & Multi-Filters:**
-   - Instant search with a clear `✕` button.
-   - Category filter tabs with live item count chips.
-   - Sorting options: *Recommended, Highest Customer Rating, Price: Low to High, Price: High to Low*.
-4. **Cart Drawer with Free Delivery Meter:**
-   - Visual progress bar that tracks how much more to add for free delivery (threshold: ₹499).
-   - One-tap clickable coupon chips (tap `PIZZA20` to instantly apply a 20% discount).
-5. **Floating Action Controls:**
-   - Floating cart bubble with live price and counter at the bottom-right corner.
-   - Smooth scroll-to-top button.
-6. **Live Delivery Status & Order Simulation:**
-   - Visual step-by-step order tracking in the Dashboard (*Order Confirmed ➔ Wood-Fired Oven ➔ Out for Delivery ➔ Delivered*).
-   - One-click "⚡ Simulate Live Order" button to test order tracking immediately.
-   - Stage progression button to advance orders through each milestone.
-   - "🔄 Reorder" button to re-add past favorites in one click.
-7. **Instant Demo Login:**
-   - "⚡ 1-Click Login" button on the Sign In page to log in as test user *John Doe* instantly.
-   - Password show/hide toggle.
-8. **Interactive Pizza Stories:**
-   - Interactive ❤️ like buttons that track likes in `localStorage`.
-   - Category filtering across blog articles.
-   - Live image preview with quick preset buttons on the Create Blog page.
+## 🚀 How to Run the Application
 
----
+### 1. Start the Backend Server:
+```bash
+# Install dependencies (Express & CORS)
+npm install
 
-## 📂 Project Structure
-```
-PizzaCraft/
-├── index.html           # Vibrant homepage with hero, highlights, top pizzas, & reviews
-├── menu.html            # Full menu with customizer, filters, search & sorting
-├── blog.html            # Culinary stories with interactive likes & filters
-├── create-blog.html     # Story editor with live image preview & presets
-├── dashboard.html       # Customer dashboard with real-time order tracker & history
-├── login.html           # Sign in page with 1-click demo login & password toggle
-├── register.html        # Registration page with 120 points welcome bonus
-├── css/
-│   └── style.css        # Vibrant modern styling, animations & responsive media queries
-└── js/
-    ├── app.js           # Cart management, drawer, toasts & floating controls
-    ├── menu.js          # Menu data, customizer modal, in-card qty controls & search
-    ├── auth.js          # Authentication, user session & demo accounts
-    ├── dashboard.js     # Live order tracking & simulator
-    └── blog.js          # Articles, category filters & interactive likes
+# Start the server (runs on port 5000 by default)
+npm start
 ```
 
+Once started:
+- 🌐 **Web App:** [http://localhost:5000](http://localhost:5000)
+- 🚀 **REST API Health Check:** [http://localhost:5000/api/health](http://localhost:5000/api/health)
+
+### 2. Run Automated API Tests:
+```bash
+node test-api.js
+```
+*Validates 15 automated test cases covering registration, validation, duplicate prevention, authentication, blog creation, like counter, and order status transitions.*
+
 ---
 
-## ⚡ How to Run
-Simply open `index.html` in any modern web browser, or serve with any static web server (e.g. `npx serve`, Live Server in VS Code, or Python `python -m http.server 8000`).
+## 🔗 Frontend & Backend Connection
+- **API Client (`js/api.js`):** Centralizes all `fetch()` calls to the Express REST APIs.
+- **Graceful Fallback:** If opened directly as a static file (`file:///`) or if the backend server is temporarily paused, the frontend automatically falls back to `localStorage` so the user experience never breaks.
+- **Connected Modules:**
+  - `js/auth.js` ➔ Connected to `/api/auth/register` and `/api/auth/login`.
+  - `js/blog.js` ➔ Connected to `/api/blogs` (read, publish story, and like).
+  - `js/dashboard.js` & `js/app.js` ➔ Connected to `/api/orders` (place orders and advance live status).
+
+---
+
+## 🎨 UI Features
+- **Vibrant Italian Gourmet Theme:** Warm fire gradients (`#FF3838` to `#FFA502`), fresh herb greens (`#10AC84`), and rich berry accents.
+- **Interactive Pizza Customizer Modal:** Personalize crust size (8", 10", 12"), crust style (Sourdough, Thin, Cheese Burst), and gourmet add-ons with live price calculation.
+- **In-Card Quantity Controllers:** Instant `[-] [qty] [+]` adjustments directly on the menu cards.
+- **Cart Drawer Free Delivery Meter:** Dynamic visual progress meter tracking free delivery progress up to ₹499.
+- **Live Order Tracker:** 4-stage tracking (*Order Confirmed ➔ Wood-Fired Oven ➔ Out for Delivery ➔ Delivered*).
+- **Instant Demo Login:** 1-Click login as test user *John Doe* (`john@example.com` / `password123`).

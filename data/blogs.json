@@ -1,0 +1,51 @@
+[
+  {
+    "id": "blog-1794922569738",
+    "title": "The Secrets of San Marzano Volcanic Tomatoes",
+    "category": "Ingredient Spotlight",
+    "author": "Chef Mario",
+    "avatar": "https://ui-avatars.com/api/?name=Chef%20Mario&background=FF3838&color=fff",
+    "date": "Nov 17, 2026",
+    "readTime": "2 min read",
+    "image": "https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800",
+    "content": "Grown on the southern slopes of Mount Vesuvius, authentic San Marzano tomatoes possess a distinct bittersweet complexity, vibrant scarlet hue, and gentle acidity.",
+    "likes": 2,
+    "createdAt": "2026-11-17T13:36:09.738Z"
+  },
+  {
+    "id": "blog-1",
+    "title": "The Art of 72-Hour Slow Fermentation: Why Dough Patience Matters",
+    "category": "Baking Secrets",
+    "author": "Chef Marco Rossi",
+    "avatar": "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=100&auto=format&fit=crop&q=80",
+    "date": "Feb 12, 2026",
+    "readTime": "5 min read",
+    "likes": 42,
+    "image": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&auto=format&fit=crop&q=80",
+    "content": "Dough fermentation is both chemistry and passion. By retarding yeast activity at 4°C for 72 hours, enzymes break down complex starches into natural sugars, yielding that prized bubbly leopard-spotted cornicione (crust) that is light, airy, and gentle on digestion."
+  },
+  {
+    "id": "blog-2",
+    "title": "From San Marzano to Naples: Sourcing the World’s Sweetest Volcanic Tomatoes",
+    "category": "Ingredient Spotlight",
+    "author": "Elena Bellini",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+    "date": "Jan 28, 2026",
+    "readTime": "4 min read",
+    "likes": 89,
+    "image": "https://images.unsplash.com/photo-1592417817098-8f3d6eb2251a?w=800&auto=format&fit=crop&q=80",
+    "content": "Grown in the mineral-rich volcanic soil beneath Mount Vesuvius, authentic San Marzano tomatoes boast an unmistakable bittersweet flavor profile, lower acidity, and thick pulp that creates the velvety red base our pizzas are celebrated for."
+  },
+  {
+    "id": "blog-3",
+    "title": "Pairing Cheese & Heat: The Science Behind the Ultimate Mozzarella Pull",
+    "category": "Culinary Craft",
+    "author": "David Tan",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+    "date": "Jan 15, 2026",
+    "readTime": "6 min read",
+    "likes": 64,
+    "image": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&auto=format&fit=crop&q=80",
+    "content": "Not all cheese melts identically. Achieving that picture-perfect stretch without greasiness requires balancing high-moisture fresh Fior di Latte with aged whole-milk curd, flash-baked at 450°C for exactly 90 seconds."
+  }
+]

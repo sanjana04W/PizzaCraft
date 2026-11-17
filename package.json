@@ -1,0 +1,23 @@
+{
+  "name": "pizzacraft",
+  "version": "1.0.0",
+  "description": "PizzaCraft - Artisanal Wood-Fired Pizza Delivery & Community Blog Backend & Frontend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "pizza",
+    "express",
+    "nodejs",
+    "rest-api",
+    "blog"
+  ],
+  "author": "PizzaCraft",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0"
+  }
+}

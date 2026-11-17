@@ -1,0 +1,12 @@
+[
+  {
+    "id": "usr_demo_101",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "phone": "+91 98765 43210",
+    "address": "42 Baker Street, Foodie Lane, Mumbai, MH",
+    "loyaltyPoints": 340,
+    "joinedDate": "Jan 2026"
+  }
+]

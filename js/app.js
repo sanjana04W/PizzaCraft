@@ -321,7 +321,7 @@ function applyPromoCode(code) {
 }
 
 // Checkout Process Simulation
-function proceedToCheckout() {
+async function proceedToCheckout() {
   const cart = getCart();
   if (cart.length === 0) {
     showToast('Your cart is empty! Please select a delicious pizza first.', 'info');
@@ -338,7 +338,7 @@ function proceedToCheckout() {
   }
 
   const summary = getCartSummary();
-  const newOrder = {
+  let newOrder = {
     id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
     items: cart,
     subtotal: summary.subtotal,
@@ -351,6 +351,14 @@ function proceedToCheckout() {
     userEmail: user.email,
     estimatedMinutes: 25
   };
+
+  // Sync with Backend API if available
+  if (window.PizzaCraftAPI) {
+    const res = await window.PizzaCraftAPI.createOrder(newOrder);
+    if (res.ok && res.data && res.data.order) {
+      newOrder = res.data.order;
+    }
+  }
 
   const orders = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || '[]');
   orders.unshift(newOrder);

@@ -1,12 +1,12 @@
 /**
  * PizzaCraft - Blog & Culinary Stories Module
- * Interactive Likes, Category Filters, Image Previews, and Story Publishing
+ * Integrated with Node.js/Express Backend REST API (/api/blogs)
  */
 
 const BLOGS_STORAGE_KEY = 'pizzacraft_blogs';
 const BLOG_LIKES_STORAGE_KEY = 'pizzacraft_blog_likes';
 
-const INITIAL_BLOGS = [
+const INITIAL_FALLBACK_BLOGS = [
   {
     id: 'blog-1',
     title: 'The Art of 72-Hour Slow Fermentation: Why Dough Patience Matters',
@@ -45,21 +45,19 @@ const INITIAL_BLOGS = [
   }
 ];
 
-// Initialize Blogs in LocalStorage
-function getBlogs() {
+function getLocalBlogs() {
   const stored = localStorage.getItem(BLOGS_STORAGE_KEY);
   if (!stored) {
-    localStorage.setItem(BLOGS_STORAGE_KEY, JSON.stringify(INITIAL_BLOGS));
-    return INITIAL_BLOGS;
+    localStorage.setItem(BLOGS_STORAGE_KEY, JSON.stringify(INITIAL_FALLBACK_BLOGS));
+    return INITIAL_FALLBACK_BLOGS;
   }
   try {
     return JSON.parse(stored);
   } catch (e) {
-    return INITIAL_BLOGS;
+    return INITIAL_FALLBACK_BLOGS;
   }
 }
 
-// User liked blogs set
 function getUserLikes() {
   try {
     return JSON.parse(localStorage.getItem(BLOG_LIKES_STORAGE_KEY) || '[]');
@@ -70,25 +68,40 @@ function getUserLikes() {
 
 let activeBlogFilter = 'all';
 
-// Render Blog List on blog.html and homepage
-function renderBlogs(targetId = 'blogsContainer', limit = null) {
+// Fetch & Render Blog List
+async function renderBlogs(targetId = 'blogsContainer', limit = null) {
   const container = document.getElementById(targetId);
   if (!container) return;
 
-  let blogs = getBlogs();
-  const userLikes = getUserLikes();
+  let blogs = [];
 
-  if (activeBlogFilter !== 'all') {
-    blogs = blogs.filter(b => b.category === activeBlogFilter);
+  // 1. Try Backend API
+  if (window.PizzaCraftAPI) {
+    const res = await window.PizzaCraftAPI.getBlogs(activeBlogFilter);
+    if (res.ok && res.data && res.data.blogs) {
+      blogs = res.data.blogs;
+      // Sync with localStorage
+      localStorage.setItem(BLOGS_STORAGE_KEY, JSON.stringify(blogs));
+    }
+  }
+
+  // 2. Fallback to local storage if API was offline or empty
+  if (blogs.length === 0) {
+    blogs = getLocalBlogs();
+    if (activeBlogFilter !== 'all') {
+      blogs = blogs.filter(b => b.category.toLowerCase() === activeBlogFilter.toLowerCase());
+    }
   }
 
   if (limit && typeof limit === 'number') {
     blogs = blogs.slice(0, limit);
   }
 
+  const userLikes = getUserLikes();
+
   container.innerHTML = blogs.map(blog => {
     const isLiked = userLikes.includes(blog.id);
-    const likeCount = (blog.likes || 0) + (isLiked ? 1 : 0);
+    const likeCount = (blog.likes || 0);
 
     return `
       <article class="blog-card">
@@ -124,9 +137,10 @@ function filterBlogs(category) {
   renderBlogs();
 }
 
-function toggleBlogLike(blogId, btnElem) {
+async function toggleBlogLike(blogId, btnElem) {
   let userLikes = getUserLikes();
   const alreadyLiked = userLikes.includes(blogId);
+  const action = alreadyLiked ? 'unlike' : 'like';
 
   if (alreadyLiked) {
     userLikes = userLikes.filter(id => id !== blogId);
@@ -137,11 +151,17 @@ function toggleBlogLike(blogId, btnElem) {
   }
 
   localStorage.setItem(BLOG_LIKES_STORAGE_KEY, JSON.stringify(userLikes));
+
+  // Sync to Backend
+  if (window.PizzaCraftAPI) {
+    await window.PizzaCraftAPI.likeBlog(blogId, action);
+  }
+
   renderBlogs();
 }
 
-// Handle Blog Creation on create-blog.html
-function handleCreateBlog(e) {
+// Handle Blog Creation on create-blog.html via Backend POST /api/blogs
+async function handleCreateBlog(e) {
   e.preventDefault();
 
   const title = document.getElementById('blogTitle').value.trim();
@@ -149,12 +169,40 @@ function handleCreateBlog(e) {
   const author = document.getElementById('blogAuthor').value.trim();
   const image = document.getElementById('blogImage').value.trim() || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800';
   const content = document.getElementById('blogContent').value.trim();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
 
   if (!title || !author || !content) {
     showToast('Please fill in title, author, and story content!', 'info');
     return;
   }
 
+  const payload = {
+    title,
+    category,
+    author,
+    image,
+    content
+  };
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Publishing to Server...';
+  }
+
+  // 1. Try Backend REST API
+  if (window.PizzaCraftAPI) {
+    const res = await window.PizzaCraftAPI.createBlog(payload);
+    
+    if (res.ok && res.data && res.data.success) {
+      showToast('🎉 ' + res.data.message, 'success');
+      setTimeout(() => {
+        window.location.href = 'blog.html';
+      }, 900);
+      return;
+    }
+  }
+
+  // 2. Offline fallback
   const newBlog = {
     id: 'blog-' + Date.now(),
     title,
@@ -168,14 +216,14 @@ function handleCreateBlog(e) {
     likes: 1
   };
 
-  const blogs = getBlogs();
+  const blogs = getLocalBlogs();
   blogs.unshift(newBlog);
   localStorage.setItem(BLOGS_STORAGE_KEY, JSON.stringify(blogs));
 
-  showToast('🎉 Your pizza story has been published to the community!', 'success');
+  showToast('🎉 Your pizza story has been published!', 'success');
   setTimeout(() => {
     window.location.href = 'blog.html';
-  }, 1000);
+  }, 900);
 }
 
 // Helper to prefill sample data in create blog
