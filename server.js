@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+  try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) { console.warn('Could not create data dir:', e.message); }
 }
 
 // Middleware
@@ -65,7 +65,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve frontend static files
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Fallback for API 404 (mounted after all valid /api routes)
 app.use('/api', (req, res) => {
@@ -77,7 +77,7 @@ app.use('/api', (req, res) => {
 
 // Default fallback to index.html
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Global error handler
@@ -88,6 +88,11 @@ app.use((err, req, res, next) => {
     message: 'An internal server error occurred.'
   });
 });
+
+// VERCEL_DB_CONNECT: connect to MongoDB when imported by Vercel
+if (require.main !== module) {
+  connectDB().catch((err) => console.error('DB connect error:', err));
+}
 
 // Start Server
 if (require.main === module) {
